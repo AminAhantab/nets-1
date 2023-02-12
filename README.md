@@ -23,8 +23,8 @@
 
 > The _Lottery Ticket Hypothesis_ (LTH) asserts that a randomly initialised overparameterised Deep Neural Network (DNN) contains a sparse subnetwork that, when trained (up to) the same amount as the original network, performs just as well.
 
-The LTH suggests that resetting a DNN to its initialisation helps to find a highly trainable subnetwork.
-Neuroevolution Ticket Search (NeTS) is a method for finding a winning ticket for a DNN that uses a genetic algorithm to search for a winning ticket.
+The LTH suggests that resetting an overparameterised DNN to its initialisation (after a period of gradient descent) is, in some way, necessary for finding a highly trainable subnetwork.
+Neuroevolution Ticket Search (NeTS) is a method for finding a winning ticket for a DNN that uses a genetic algorithm to search for a winning ticket, or initialisation, wihtout first pre-training an overparameterised dense one.
 It seeks to emulate the workings of Iterative Magnitude Pruning (IMP), introduced alongside the LTH by Frankle and Carbin (2019), by incorporating a fitness signal that includes information both a networks sparsity and trainability.
 
 ***This repository conttains an implementation of NeTS written in Python that uses PyTorch models to represent phenotypic networks.***
