@@ -19,7 +19,7 @@
         A DALL-E rendering of sparse, deep neural networks in a print style.
     </small>
 </div>
-
+<br />
 
 > The _Lottery Ticket Hypothesis_ (LTH) asserts that a randomly initialised overparameterised Deep Neural Network (DNN) contains a sparse subnetwork that, when trained (up to) the same amount as the original network, performs just as well.
 
