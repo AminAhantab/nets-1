@@ -50,26 +50,28 @@ class HyperParameters:
 
 
 def default_hyperparameters() -> HyperParameters:
-    return {
-        "name": None,
-        "experiment": None,
-        "seed": None,
-        "data_dir": "./data",
-        "results_dir": "./results",
-        "dataset": "mnist",
-        "train_size": None,
-        "val_size": None,
-        "test_size": None,
-        "batch_size": 64,
-        "optimiser": "SGD",
-        "learning_rate": 0.01,
-        "pop_size": 5,
-        "elitism": 2,
-        "p_crossover": 0.5,
-        "mr_weight_noise": 0.1,
-        "mr_weight_rand": 0.1,
-        "mr_weight_zero": 0.2,
-        "max_generations": 20,
-        "min_fitness": 0,
-        "min_val_loss": 0,
-    }
+    return HyperParameters(
+        {
+            "name": None,
+            "experiment": None,
+            "seed": None,
+            "data_dir": "./data",
+            "results_dir": "./results",
+            "dataset": "mnist",
+            "train_size": None,
+            "val_size": None,
+            "test_size": None,
+            "batch_size": 64,
+            "optimiser": "SGD",
+            "learning_rate": 0.01,
+            "pop_size": 5,
+            "elitism": 2,
+            "p_crossover": 0.5,
+            "mr_weight_noise": 0.1,
+            "mr_weight_rand": 0.1,
+            "mr_weight_zero": 0.2,
+            "max_generations": 20,
+            "min_fitness": 0,
+            "min_val_loss": 0,
+        }
+    )

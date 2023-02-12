@@ -92,7 +92,6 @@ def select_parents(fitness: Tensor, num_parents: int) -> Tensor:
 
     # Roulette wheel selection
     parents = torch.searchsorted(cumulative_probs, random_numbers)
-    print(parents)
     return parents
 
 
@@ -186,7 +185,6 @@ def uniform_crossover(
 
     # Get the shape of the population
     _, genome_depth, genome_length = population.shape
-    print(parents.shape)
     num_parents = parents.shape[0]
 
     # Create a tensor to store the children

@@ -1,5 +1,4 @@
-data/*
-!data/.gitkeep
+data/MNIST
 
 results/*
 !results/.gitkeep

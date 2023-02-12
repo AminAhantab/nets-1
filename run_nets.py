@@ -3,13 +3,11 @@ import logging
 
 import pandas as pd
 
-from nets import neuroevolution_ts
-from lenet import LeNetFeedForwardNetwork
-from hyperparameters import HyperParameters
-
-import mnist
+from data import mnist
+from models import LeNetFeedForwardNetwork
+from nets import neuroevolution_ts, callbacks as nets_callbacks
+from params import HyperParameters
 import utils
-import callbacks
 
 EXPERIMENT_NAME = f"nets-mnist-50"
 
@@ -37,10 +35,10 @@ def mnist_experiment(params: HyperParameters) -> pd.DataFrame:
     utils.write_params(params, dir=params.results_dir, name=file_name)
 
     # Create callbacks
-    test_df = callbacks.init_test_df()
+    test_df = nets_callbacks.init_test_df()
     cbks = [
-        callbacks.test_callback(test_df, train_data, test_data, epochs=1),
-        callbacks.log_callback(),
+        nets_callbacks.test_callback(test_df, train_data, test_data, epochs=1),
+        nets_callbacks.log_callback(),
     ]
 
     # Run neuroevolution

@@ -1,6 +1,6 @@
 import torch
 
-from stronglth.nn import MaskedNetwork, MaskedLinear
+from nets.nn import MaskedNetwork, MaskedLinear
 
 
 class MultiLayerPerceptron(MaskedNetwork):
@@ -80,7 +80,7 @@ class MultiLayerPerceptron(MaskedNetwork):
 if __name__ == "__main__":
     import pandas as pd
     import matplotlib.pyplot as plt
-    import xor
+    import data.xor as xor
     from itertools import cycle
     from torch.utils.data import DataLoader
 
@@ -116,7 +116,6 @@ if __name__ == "__main__":
                 if iteration % log_interval == 0:
                     res = [iteration, loss, acc]
                     df.loc[len(df)] = res
-                    print(res)
 
                 if iteration == iterations:
                     break

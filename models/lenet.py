@@ -1,8 +1,9 @@
 from itertools import cycle
+
 import torch
 from torch.nn import functional as F
 
-from nets.nn.masked import MaskedNetwork, MaskedLinear
+from nets import MaskedNetwork, MaskedLinear
 
 
 class LeNetFeedForwardNetwork(MaskedNetwork):
@@ -161,7 +162,6 @@ if __name__ == "__main__":
                     val_loss, val_acc = validation_loop()
                     res = [iteration, loss, val_loss, val_acc]
                     df.loc[len(df)] = res
-                    print(res)
 
                 if iteration == iterations:
                     break

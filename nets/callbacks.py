@@ -7,8 +7,8 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
-import nets.genetic as genetic
-from nets.nn import MaskedNetwork, train_model, evaluate_model
+from . import genetic
+from .nn import MaskedNetwork, train_model, evaluate_model
 
 logger = logging.getLogger("nets")
 
