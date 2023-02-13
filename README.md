@@ -24,7 +24,7 @@
 Assuming you have a working Python and anaconda installation, you can get started with NeTS by following these steps:
 
 1. Clone the repository using `git clone`.
-2. 2. Install the dependencies using `conda env create -f environment.yml`.
+2. Install the dependencies using `conda env create -f environment.yml`.
 3. Activate the environment using `conda activate nets`.
 4. Run the experiments using `python run_nets.py`.
 
