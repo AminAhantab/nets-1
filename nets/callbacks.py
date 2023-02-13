@@ -6,6 +6,7 @@ import pandas as pd
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
+from torch.multiprocessing import Manager, Process
 
 from . import genetic
 from .nn import MaskedNetwork, train_model, evaluate_model
@@ -64,6 +65,87 @@ def test_callback(
                 i,
                 test_losses[i].item(),
                 test_accs[i].item(),
+            ]
+
+        fitness_results["test_loss"] = test_losses
+        fitness_results["test_acc"] = test_accs
+
+        # Log and return results
+        logger.debug("Finished testing: mean test loss: %.4f", test_losses.mean())
+
+    return callback
+
+
+def test_callback_parallel(
+    df: pd.DataFrame,
+    train_data: Dataset,
+    test_data: Dataset,
+    epochs: int = 1,
+    batch_size: int = 64,
+) -> Tensor:
+    """Create a callback function for testing a population of networks."""
+
+    def callback(
+        model: MaskedNetwork,
+        population: Tensor,
+        fitness_results: Dict[str, Tensor],
+        generation: int,
+    ) -> Tensor:
+        """Evaluate the fitness of each individual in the population."""
+        # Initialise data loaders
+        train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+        test_loader = DataLoader(test_data, batch_size=None)
+
+        # Determine population size
+        pop_size = population.shape[0]
+        logger.info(
+            "Testing population of %d individuals after %d epochs of SGD.",
+            pop_size,
+            epochs,
+        )
+
+        # Store results in shared memory
+        manager = Manager()
+        test_losses = manager.list([0.0] * pop_size)
+        test_accs = manager.list([0.0] * pop_size)
+
+        # Individual evaluation function
+        def calc_test_loss(i):
+            logger.debug(f"Testing individual {i}.")
+
+            # Load weights into model
+            genetic.load_weights(model, population[i], requires_grad=True)
+
+            # Train model on training set
+            logger.debug("Training network on training set for %d epochs.", epochs)
+            opt = torch.optim.SGD(model.parameters(), lr=1e-3)
+            train_model(model, train_loader, opt, epochs=epochs)
+
+            # Evaluate model on test set
+            test_losses[i], test_accs[i] = evaluate_model(model, test_loader)
+
+        # Evaluate each individual in the population
+        proccesses = []
+        for i in range(pop_size):
+            p = Process(target=calc_test_loss, args=(i,))
+            p.start()
+            proccesses.append(p)
+
+        # Wait for all processes to finish
+        for p in proccesses:
+            p.join()
+
+        # Convert to tensors
+        test_losses = torch.tensor(test_losses)
+        test_accs = torch.tensor(test_accs)
+
+        # Save results to dataframe
+        for i in range(pop_size):
+            df.loc[len(df)] = [
+                generation,
+                i,
+                test_losses[i],
+                test_accs[i],
             ]
 
         fitness_results["test_loss"] = test_losses

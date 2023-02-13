@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import datetime
 import logging
 from typing import Any, Callable, Dict, List, Union
@@ -32,6 +33,7 @@ def neuroevolution_ts(
     min_fitness: float = None,
     min_val_loss: float = None,
     callbacks: List[Callback] = None,
+    parallel: bool = False,
 ):
     """
     Run Neuroevolution Ticket Search (NeTS) to find a winning network
@@ -78,7 +80,10 @@ def neuroevolution_ts(
     val_loader = DataLoader(val_data, batch_size=None)
 
     # Initialise fitness function
-    fitness_fn = genetic.nets_fitness(model, train_loader, val_loader)
+    if parallel:
+        fitness_fn = genetic.nets_parallel_fitness(model, train_loader, val_loader)
+    else:
+        fitness_fn = genetic.nets_fitness(model, train_loader, val_loader)
 
     # Initialise results
     solution = None

@@ -2,6 +2,7 @@ import os
 import logging
 
 import pandas as pd
+from torch.multiprocessing import set_start_method
 
 from data import mnist
 from models import LeNetFeedForwardNetwork
@@ -37,7 +38,7 @@ def mnist_experiment(params: HyperParameters) -> pd.DataFrame:
     # Create callbacks
     test_df = nets_callbacks.init_test_df()
     cbks = [
-        nets_callbacks.test_callback(test_df, train_data, test_data, epochs=1),
+        nets_callbacks.test_callback_parallel(test_df, train_data, test_data, epochs=1),
         nets_callbacks.log_callback(),
     ]
 
@@ -58,6 +59,7 @@ def mnist_experiment(params: HyperParameters) -> pd.DataFrame:
         min_fitness=params.min_fitness,
         min_val_loss=params.min_val_loss,
         callbacks=cbks,
+        parallel=True,
     )
 
     # Return results as dataframe
@@ -65,6 +67,9 @@ def mnist_experiment(params: HyperParameters) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
+    # Set start method for multiprocessing
+    set_start_method("spawn")
+
     # Run experiment
     params = HyperParameters(
         seed=42,

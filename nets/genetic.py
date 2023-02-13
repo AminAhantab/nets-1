@@ -1,3 +1,4 @@
+import copy
 import math
 import logging
 from typing import Callable, Dict
@@ -6,6 +7,7 @@ import torch
 from torch import nn, Tensor
 from torch.utils.data import DataLoader
 from torch.optim import SGD
+from torch.multiprocessing import Manager, Process
 
 from .nn import MaskedNetwork, MaskedLinear, train_model, evaluate_model
 
@@ -157,6 +159,90 @@ def nets_fitness(
             "val_acc": val_accs,
             "density": densities,
             "penalty": penalties,
+        }
+
+        return results
+
+    return fitness
+
+
+def nets_parallel_fitness(
+    model: MaskedNetwork,
+    train_data: DataLoader,
+    val_data: DataLoader,
+    target: float = 0.2,
+) -> FitnessFn:
+    """
+    Create a fitness function for the Nets algorithm.
+
+    This is a higher-order function that returns a function that can be used to
+    calculate the fitness of a population.
+    It will use the given model, data and target density to calculate the
+    losses, accuracies, and fitness.
+
+    Args:
+        model: The model to train.
+        train_data: The data to train on.
+        val_data: The data to validate on.
+        target: The target density of the model.
+
+    Returns:
+        A function that can be used to calculate the fitness of a population.
+    """
+
+    def fitness(population: Tensor) -> Dict[str, Tensor]:
+        # Create a manager to share data between processes
+        manager = Manager()
+
+        fitnesses = manager.list([0.0] * population.shape[0])
+        train_losses = manager.list([0.0] * population.shape[0])
+        val_losses = manager.list([0.0] * population.shape[0])
+        val_accs = manager.list([0.0] * population.shape[0])
+        densities = manager.list([0.0] * population.shape[0])
+        penalties = manager.list([0.0] * population.shape[0])
+
+        def calc_fitness(individual: Tensor, i: int):
+            logger.debug(f"Training chromosome {i}...")
+
+            # Create a new model
+            local_model = copy.deepcopy(model)
+
+            # Load the weights into the model
+            load_weights(local_model, individual, requires_grad=True)
+
+            # Train the model
+            opt = SGD(local_model.parameters(), lr=0.001)
+            train_loss = train_model(local_model, train_data, opt, epochs=1)
+
+            # Evaluate the model
+            val_loss, val_acc = evaluate_model(local_model, val_data)
+            density = local_model.density()
+            penalty = ((density - target) / (1 - target)) ** 2
+
+            # Calculate the fitness
+            fitnesses[i] = train_loss + penalty
+            train_losses[i] = train_loss
+            val_losses[i] = val_loss
+            val_accs[i] = val_acc
+            densities[i] = density
+            penalties[i] = penalty
+
+        processes = []
+        for i, individual in enumerate(population):
+            p = Process(target=calc_fitness, args=(individual, i))
+            p.start()
+            processes.append(p)
+
+        for p in processes:
+            p.join()
+
+        results = {
+            "fitness": torch.tensor(fitnesses),
+            "train_loss": torch.tensor(train_losses),
+            "val_loss": torch.tensor(val_losses),
+            "val_acc": torch.tensor(val_accs),
+            "density": torch.tensor(densities),
+            "penalty": torch.tensor(penalties),
         }
 
         return results
