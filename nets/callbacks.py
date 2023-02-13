@@ -144,8 +144,8 @@ def test_callback_parallel(
             df.loc[len(df)] = [
                 generation,
                 i,
-                test_losses[i],
-                test_accs[i],
+                test_losses[i].item(),
+                test_accs[i].item(),
             ]
 
         fitness_results["test_loss"] = test_losses

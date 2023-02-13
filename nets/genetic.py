@@ -79,6 +79,9 @@ def select_parents(fitness: Tensor, num_parents: int) -> Tensor:
         A tensor of shape (num_parents,) containing the indices of the selected
         parents.
     """
+    assert num_parents > 0
+    logger.info("Selecting %d parents...", num_parents)
+
     # Create a tensor to store the parents
     parents = torch.zeros(num_parents, dtype=torch.long)
 
@@ -130,16 +133,18 @@ def nets_fitness(
         penalties = torch.zeros_like(fitnesses)
 
         for i, individual in enumerate(population):
-            logger.debug(f"Training chromosome {i}...")
+            logger.info(f"Calculating fitness of chromosome {i}...")
 
             # Load the weights into the model
             load_weights(model, individual, requires_grad=True)
 
             # Train the model
+            logger.debug(f"Training chromosome {i}...")
             opt = SGD(model.parameters(), lr=0.001)
             train_loss = train_model(model, train_data, opt, epochs=1)
 
             # Evaluate the model
+            logger.debug(f"Evaluating chromosome {i}...")
             val_loss, val_acc = evaluate_model(model, val_data)
             density = model.density()
             penalty = ((density - target) / (1 - target)) ** 2
@@ -202,7 +207,7 @@ def nets_parallel_fitness(
         penalties = manager.list([0.0] * population.shape[0])
 
         def calc_fitness(individual: Tensor, i: int):
-            logger.debug(f"Training chromosome {i}...")
+            logger.info(f"Computing fitness for chromosome {i}...")
 
             # Create a new model
             local_model = copy.deepcopy(model)
@@ -211,10 +216,12 @@ def nets_parallel_fitness(
             load_weights(local_model, individual, requires_grad=True)
 
             # Train the model
+            logger.debug(f"Training chromosome {i}...")
             opt = SGD(local_model.parameters(), lr=0.001)
             train_loss = train_model(local_model, train_data, opt, epochs=1)
 
             # Evaluate the model
+            logger.debug(f"Evaluating chromosome {i}...")
             val_loss, val_acc = evaluate_model(local_model, val_data)
             density = local_model.density()
             penalty = ((density - target) / (1 - target)) ** 2
@@ -235,6 +242,8 @@ def nets_parallel_fitness(
 
         for p in processes:
             p.join()
+
+        logger.debug("All processes finished computing fitnesses.")
 
         results = {
             "fitness": torch.tensor(fitnesses),
@@ -268,7 +277,7 @@ def uniform_crossover(
         A tensor of shape (num_offspring, genome_depth, genome_length)
         containing the offspring.
     """
-
+    logger.info(f"Performing uniform crossover on {parents.shape[0]} parents...")
     # Get the shape of the population
     _, genome_depth, genome_length = population.shape
     num_parents = parents.shape[0]
@@ -305,6 +314,8 @@ def noise_mutation(individuals: Tensor, p: float, scale: float = 0.1):
     Returns:
         None
     """
+    logger.info(f"Mutating {individuals.shape[0]} individuals (noise)...")
+
     # Extract the shape of the population
     num_individuals, _, genome_length = individuals.shape
 
@@ -331,6 +342,8 @@ def random_weight_mutation(individuals: Tensor, p: float):
     Returns:
         None
     """
+    logger.info(f"Mutating weight of {individuals.shape[0]} individuals (random)...")
+
     # Extract the shape of the population
     num_individuals, _, num_weights = individuals.shape
 
@@ -358,6 +371,7 @@ def disable_weight_mutation(individuals: Tensor, p: float):
     Returns:
         None
     """
+    logger.info(f"Mutating weight of {individuals.shape[0]} individuals (disable)...")
     # Extract the shape of the population
     num_children, _, num_weights = individuals.shape
 
@@ -389,6 +403,8 @@ def next_generation(
     Returns:
         The next generation of the population.
     """
+    logger.info("Creating the next generation...")
+
     # Find the elite individuals
     _, elite_idxs = torch.topk(fitness, k=elitism, largest=False)
 

@@ -2,7 +2,6 @@ import os
 import logging
 
 import pandas as pd
-from torch.multiprocessing import set_start_method
 
 from data import mnist
 from models import LeNetFeedForwardNetwork
@@ -10,7 +9,7 @@ from nets import neuroevolution_ts, callbacks as nets_callbacks
 from params import HyperParameters
 import utils
 
-EXPERIMENT_NAME = f"nets-mnist-50"
+EXPERIMENT_NAME = f"nets-mnist-seq"
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("nets")
@@ -59,7 +58,7 @@ def mnist_experiment(params: HyperParameters) -> pd.DataFrame:
         min_fitness=params.min_fitness,
         min_val_loss=params.min_val_loss,
         callbacks=cbks,
-        parallel=True,
+        parallel=params.parallel,
     )
 
     # Return results as dataframe
@@ -67,14 +66,11 @@ def mnist_experiment(params: HyperParameters) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    # Set start method for multiprocessing
-    set_start_method("spawn")
-
     # Run experiment
     params = HyperParameters(
         seed=42,
         data_dir="data",
-        results_dir="results/nets",
+        results_dir=f"/scratch/users/k1502897/nets/results/{EXPERIMENT_NAME}",
         val_size=5_000,
         batch_size=60,
         pop_size=5,
@@ -87,6 +83,7 @@ if __name__ == "__main__":
         max_generations=15,
         min_fitness=0,
         min_val_loss=0,
+        parallel=False,
     )
     results = mnist_experiment(params)
     results.to_csv(os.path.join(params.results_dir, "results.csv"), index=False)

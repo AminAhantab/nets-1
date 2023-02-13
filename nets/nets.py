@@ -81,8 +81,10 @@ def neuroevolution_ts(
 
     # Initialise fitness function
     if parallel:
+        logger.info("Using parallel fitness function")
         fitness_fn = genetic.nets_parallel_fitness(model, train_loader, val_loader)
     else:
+        logger.info("Using serial fitness function")
         fitness_fn = genetic.nets_fitness(model, train_loader, val_loader)
 
     # Initialise results

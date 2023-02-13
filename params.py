@@ -24,6 +24,7 @@ class HyperParameters:
     mr_weight_noise: float
     mr_weight_rand: float
     mr_weight_zero: float
+    parallel: bool
 
     # Stopping Criteria
     max_generations: int
@@ -73,5 +74,6 @@ def default_hyperparameters() -> HyperParameters:
             "max_generations": 20,
             "min_fitness": 0,
             "min_val_loss": 0,
+            "parallel": False,
         }
     )
