@@ -8,6 +8,7 @@ from nets_cli.args import (
     TrainArgs,
     add_arguments,
 )
+from nets_cli.runners import run_init, run_search, run_train, run_prune
 
 
 def init_parser():
@@ -51,16 +52,16 @@ def main():
 
     if subcommand == "init":
         init_args = InitArgs(**vars(args))
-        print(init_args)
+        run_init(init_args)
     elif subcommand == "search":
         search_args = SearchArgs(**vars(args))
-        print(search_args)
+        run_search(search_args)
     elif subcommand == "train":
         train_args = TrainArgs(**vars(args))
-        print(train_args)
+        run_train(train_args)
     elif subcommand == "prune":
         prune_args = PruneArgs(**vars(args))
-        print(prune_args)
+        run_prune(prune_args)
     else:
         raise ValueError(f"invalid command: {subcommand}")
 
