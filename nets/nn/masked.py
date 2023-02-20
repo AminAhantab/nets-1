@@ -42,24 +42,6 @@ class MaskedNetwork(BaseNetwork):
             if layer.weight.grad is not None:
                 layer.weight.grad *= layer.mask
 
-    def prune(self, p_values: Union[float, list[float]]):
-        """
-        Prune the network by setting the weights of some connections to zero.
-
-        Args:
-            p_values (Union[float, list[float]]): The probability of setting a connection to zero.
-
-        Raises:
-            AssertionError: If the length of p_values is not equal to the number of layers.
-        """
-        if isinstance(p_values, float):
-            p_values = [p_values, p_values, p_values]
-
-        assert len(p_values) == len(self.layers)
-        for idx, layer in enumerate(self.layers):
-            assert isinstance(layer, MaskedLinear)
-            layer.prune(p_values[idx])
-
     def density(self) -> float:
         """
         Return the density of the network.
