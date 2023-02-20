@@ -1,4 +1,7 @@
+*.pt
+
 data/MNIST
+data/cifar-*
 
 results/*
 !results/.gitkeep
