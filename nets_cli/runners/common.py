@@ -39,7 +39,7 @@ def configure_seed(seed: Union[int, None]):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
-    torch.backends.cudnn.deterministic = seed
+    torch.backends.cudnn.deterministic = seed is not None
     torch.backends.cudnn.benchmark = False
 
     logger.info(f"Running in deterministic mode with seed {seed}.")
@@ -87,6 +87,8 @@ def write_model(
             path = path + os.path.sep
 
         path = os.path.join(path, file_name)
+    else:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
 
     if os.path.exists(path):
         logger.debug(f"File already exists: {path}")

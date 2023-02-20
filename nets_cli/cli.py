@@ -1,5 +1,4 @@
 import argparse
-import logging
 
 from nets_cli.args import (
     InitArgs,
@@ -9,8 +8,6 @@ from nets_cli.args import (
     add_arguments,
 )
 from nets_cli.runners import run_init, run_search, run_train, run_prune
-
-logger = logging.getLogger("nets_cli")
 
 
 def init_parser():
@@ -50,12 +47,3 @@ def main():
         run_prune(prune_args)
     else:
         raise ValueError(f"invalid command: {subcommand}")
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        logger.critical("An error occurred.")
-        logger.critical(e)
-        raise e
