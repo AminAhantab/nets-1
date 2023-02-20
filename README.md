@@ -14,7 +14,7 @@
     </div>
     </a>
 </p>
-    
+
 *A DALL-E rendering of sparse, deep neural networks in a print style.*
 
 ***
@@ -30,14 +30,13 @@ Assuming you have a working Python and anaconda installation, you can get starte
 
 ## The Lottery Ticket Hypothesis
 
-> The _Lottery Ticket Hypothesis_ (LTH) asserts that a randomly initialised overparameterised *Deep Neural Network* (DNN) contains a sparse subnetwork that, when trained (up to) the same amount as the original network, performs just as well.
+> The *Lottery Ticket Hypothesis* (LTH) asserts that a randomly initialised overparameterised *Deep Neural Network* (DNN) contains a sparse subnetwork that, when trained (up to) the same amount as the original network, performs just as well.
 
 The LTH suggests that resetting an overparameterised DNN to its initialisation (after a period of gradient descent) is, in some way, necessary for finding a highly trainable subnetwork.
 *Neuroevolution Ticket Search* (NeTS) is a method for finding a winning ticket for a DNN that uses a genetic algorithm to search for a winning ticket, or initialisation, wihtout first pre-training an overparameterised dense one.
 It seeks to emulate the workings of *Iterative Magnitude Pruning* (IMP), introduced alongside the LTH by Frankle and Carbin (2019), by incorporating a fitness signal that includes information both a networks sparsity and trainability.
 
-***This repository conttains an implementation of NeTS written in Python that uses PyTorch models to represent phenotypic networks.***
-
+***This repository contains an implementation of NeTS written in Python that uses PyTorch models to represent phenotypic networks.***
 
 ## Experiments
 
@@ -54,9 +53,8 @@ The goal of the network when considering the MNIST dataset is to learn a correct
 We use a feed-forward architecture with 300 and 100 hidden units to test the performance of NeTS on a more complex problem.
 NeTS is able to find a winning ticket for LeNet-300-100 in a reasonable amount of time.
 
-
-
 ## References
+
 Frankle, J., & Carbin, M. (2019). The lottery ticket hypothesis: Finding sparse, trainable neural networks. arXiv preprint arXiv:1903.01611.
 
 ***
