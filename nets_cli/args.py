@@ -6,8 +6,8 @@ import os
 SUBCOMMANDS = ["init", "train", "search", "prune"]
 OPTIMISERS = ["sgd", "adam"]
 CRITERIA = ["magnitude", "l1"]
-DATASETS = ["mnist", "cifar10", "cifar100", "imagenet"]
-ARCHITECTURES = ["lenet", "resnet18", "resnet50", "resnet101", "resnet152"]
+DATASETS = ["mnist", "cifar10"]
+ARCHITECTURES = ["lenet", "conv-2", "conv-4", "conv-6", "resnet-18", "vgg-19"]
 LOG_LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
 
@@ -72,13 +72,11 @@ class BaseArgs:
     """Logging level to use."""
     log_format: str
     """Logging format to use."""
-
     log_file: str
     """File to log to."""
-    log_file_level: str
-    """Logging level to use for the log file."""
-    log_file_format: str
-    """Logging format to use for the log file."""
+
+    out_path: str
+    """Path to save output to."""
 
     def __post_init__(self):
         assert self.subcommand in SUBCOMMANDS
@@ -91,17 +89,28 @@ class BaseArgs:
             if not os.path.exists(os.path.dirname(self.log_file)):
                 errors.append(f"log file directory does not exist: {self.log_file}")
 
-        if self.log_file_level not in LOG_LEVELS:
-            errors.append(f"invalid log file level: {self.log_file_level}")
-
         if self.seed < 0:
             errors.append(f"invalid seed: {self.seed}")
+
+        # out path should either not exist or be a directory
+        if os.path.exists(self.out_path):
+            if not os.path.isdir(self.out_path):
+                errors.append(f"output path is not a directory: {self.out_path}")
 
         if len(errors) > 0:
             raise ValueError("\n".join(errors))
 
 
 def add_common_args(parser):
+    # out_path
+    parser.add_argument(
+        "--out_path",
+        type=str,
+        default=".",
+        help="path to save output to",
+        metavar="PATH",
+    )
+
     # seed (int)
     parser.add_argument(
         "--seed",
@@ -137,23 +146,6 @@ def add_common_args(parser):
         metavar="FILE",
     )
 
-    # log_file_level (enum: DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    parser.add_argument(
-        "--log_file_level",
-        type=str,
-        default="INFO",
-        help="log file level",
-        choices=LOG_LEVELS,
-    )
-
-    # log_file_format
-    parser.add_argument(
-        "--log_file_format",
-        type=str,
-        default="%(asctime)s %(levelname)s %(message)s",
-        help="log file format",
-    )
-
     return parser
 
 
@@ -161,7 +153,7 @@ def add_common_args(parser):
 class InitArgs(BaseArgs):
     """Arguments for initialising a model."""
 
-    data: str
+    dataset: str
     """Dataset to train on."""
     architecture: str
     """Architecture to use for the model."""
@@ -173,8 +165,8 @@ class InitArgs(BaseArgs):
         if self.architecture not in ARCHITECTURES:
             errors.append(f"invalid architecture: {self.architecture}")
 
-        if self.data not in DATASETS:
-            errors.append(f"invalid dataset: {self.data}")
+        if self.dataset not in DATASETS:
+            errors.append(f"invalid dataset: {self.dataset}")
 
         if self.density < 0 or self.density > 1:
             errors.append(f"density must be in [0, 1]: {self.density}")
@@ -187,6 +179,7 @@ def add_init_args(parser: ArgumentParser):
     # data (enum: mnist, cifar10, cifar100, imagenet)
     parser.add_argument(
         "--data",
+        dest="dataset",
         type=str,
         default="mnist",
         help="dataset to train on",
@@ -222,7 +215,7 @@ def add_init_args(parser: ArgumentParser):
 class GradientDescentArgs(BaseArgs):
     """Arguments for training a model."""
 
-    data: str
+    dataset: str
     """Dataset to train on."""
 
     optimiser: str
@@ -236,11 +229,8 @@ class GradientDescentArgs(BaseArgs):
 
     def __post_init__(self):
         errors = []
-        if not os.path.isfile(self.model_path):
-            errors.append(f"model path does not exist: {self.model_path}")
-
-        if self.data not in DATASETS:
-            errors.append(f"invalid dataset: {self.data}")
+        if self.dataset not in DATASETS:
+            errors.append(f"invalid dataset: {self.dataset}")
 
         if self.optimiser not in OPTIMISERS:
             errors.append(f"invalid optimiser: {self.optimiser}")
@@ -262,6 +252,7 @@ def add_gradient_descent_args(parser: ArgumentParser):
     # data (enum: mnist, cifar10, cifar100, imagenet)
     parser.add_argument(
         "--data",
+        dest="dataset",
         type=str,
         default="mnist",
         help="dataset to train on",
@@ -473,7 +464,7 @@ class PruneArgs(BaseArgs):
 
     model_path: str
     """Path to model to prune."""
-    data: str
+    dataset: str
     """Dataset to evaluate pruning on."""
 
     criterion: str
@@ -491,8 +482,8 @@ class PruneArgs(BaseArgs):
         if not os.path.isfile(self.model_path):
             errors.append(f"invalid model path: {self.model_path}")
 
-        if self.data is not None and self.data not in DATASETS:
-            errors.append(f"invalid dataset: {self.data}")
+        if self.dataset is not None and self.dataset not in DATASETS:
+            errors.append(f"invalid dataset: {self.dataset}")
 
         if self.criterion not in CRITERIA:
             errors.append(f"invalid pruning criterion: {self.criterion}")
@@ -528,6 +519,7 @@ def add_prune_args(parser: ArgumentParser):
     # data (enum: mnist, cifar10, cifar100) (optional)
     parser.add_argument(
         "--data",
+        dest="dataset",
         type=str,
         help="dataset to evaluate pruning on",
         choices=DATASETS,

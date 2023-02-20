@@ -18,6 +18,7 @@ def init_parser():
         description="Neuroevolution Ticket Search (NeTS)",
     )
 
+    # version
     parser.add_argument(
         "--version",
         action="version",

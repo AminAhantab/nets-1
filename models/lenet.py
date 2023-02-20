@@ -1,4 +1,5 @@
 from itertools import cycle
+from typing import List
 
 import torch
 from torch.nn import functional as F
@@ -7,25 +8,41 @@ from nets import MaskedNetwork, MaskedLinear
 
 
 class LeNetFeedForwardNetwork(MaskedNetwork):
-    """A LeNet feed-forward network."""
+    """
+    A LeNet feed-forward network with two hidden layers.
 
-    def __init__(self, h1: int = 300, h2: int = 100, bias: bool = True):
+    This network is based on the "Two-Hidden-Layer Fully Connected Multilayer
+    NN" (LeCun et al., 1998) with ReLU activations, negative log likelihood
+    (`log_softmax`) output, cross-entropy loss, and variable input/output sizes.
+
+    References:
+        - LeCun, Y., Bottou, L., Bengio, Y., Haffner, P., 1998. Gradient-based
+        learning applied to document recognition. Proceedings of the IEEE 86,
+        2278–2324. https://doi.org/10.1109/5.726791
+
+    Attributes:
+        layer_1 (MaskedLinear): The first hidden layer.
+        layer_2 (MaskedLinear): The second hidden layer.
+        layer_3 (MaskedLinear): The output layer.
+    """
+
+    def __init__(self, in_features: int, out_features: int, bias: bool = True):
         """
         Initialize the network.
 
         Args:
-            h1 (int): The number of neurons in the first hidden layer.
-            h2 (int): The number of neurons in the second hidden layer.
+            in_features (int): The number of input features.
+            out_features (int): The number of output features.
         """
         super().__init__()
 
-        # mnist images are (1, 28, 28) (channels, width, height)
-        self.layer_1 = MaskedLinear(28 * 28, h1, bias=bias)
+        h1, h2 = 300, 100
+        self.layer_1 = MaskedLinear(in_features, h1, bias=bias)
         self.layer_2 = MaskedLinear(h1, h2, bias=bias)
-        self.layer_3 = MaskedLinear(h2, 10, bias=bias)
+        self.layer_3 = MaskedLinear(h2, out_features, bias=bias)
 
     @property
-    def layers(self) -> list[MaskedLinear]:
+    def layers(self) -> List[MaskedLinear]:
         """
         The layers of the network.
 
@@ -44,25 +61,18 @@ class LeNetFeedForwardNetwork(MaskedNetwork):
         Returns:
             torch.Tensor: The output of the network.
         """
-        batch_size, _, _, _ = x.size()
-
-        # (b, 1, 28, 28) -> (b, 1*28*28)
+        # Flatten the input
+        batch_size = x.size()[0]
         x = x.view(batch_size, -1)
 
-        # layer 1 (b, 1*28*28) -> (b, 300)
-        x = self.layer_1(x)
-        x = torch.relu(x)
+        # Apply the layers
+        for idx, layer in enumerate(self.layers):
+            x = layer(x)
+            if idx < len(self.layers) - 1:
+                x = F.relu(x)
 
-        # layer 2 (b, 300) -> (b, 100)
-        x = self.layer_2(x)
-        x = torch.relu(x)
-
-        # layer 3 (b, 100) -> (b, 10)
-        x = self.layer_3(x)
-
-        # probability distribution over labels
+        # Apply softmax
         x = torch.log_softmax(x, dim=1)
-
         return x
 
     def loss(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
@@ -119,7 +129,7 @@ if __name__ == "__main__":
         mnist_val = DataLoader(mnist_val, batch_size=batch_size)
 
         # model
-        model = LeNetFeedForwardNetwork()
+        model = LeNetFeedForwardNetwork(28 * 28, 10)
 
         # infinite iterator over the training set
         mnist_train = cycle(mnist_train)
@@ -162,6 +172,9 @@ if __name__ == "__main__":
                     val_loss, val_acc = validation_loop()
                     res = [iteration, loss, val_loss, val_acc]
                     df.loc[len(df)] = res
+                    print(
+                        f"Iteration: {iteration}, Loss: {loss:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}"
+                    )
 
                 if iteration == iterations:
                     break

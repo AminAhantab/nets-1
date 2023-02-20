@@ -42,7 +42,7 @@ def mnist_experiment(params: HyperParameters) -> pd.DataFrame:
     ]
 
     # Run neuroevolution
-    model = LeNetFeedForwardNetwork(bias=False)
+    model = LeNetFeedForwardNetwork(28 * 28, 10, bias=False)
     results = neuroevolution_ts(
         model,
         train_data,
