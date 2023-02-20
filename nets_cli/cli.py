@@ -29,23 +29,6 @@ def init_parser():
 
 
 def main():
-    try:
-        import torch
-
-        print("torch version:", torch.__version__)
-    except ImportError:
-        raise ImportError(
-            "Please install torch to use nets. "
-            "You can install torch via `pip install torch`."
-        )
-
-    if torch.cuda.is_available():
-        print("cuda version:", torch.version.cuda)
-        torch.set_default_tensor_type("torch.cuda.FloatTensor")
-    else:
-        print("cuda is not available")
-        torch.set_default_tensor_type("torch.FloatTensor")
-
     parser = init_parser()
     args = parser.parse_args()
 

@@ -1,29 +1,37 @@
 import logging
 from typing import Callable, Tuple
 
-import torch
 from nets.nn.masked import MaskedNetwork
 from nets_cli.args import InitArgs
-from .common import configure_logger, configure_seed, write_model
+from .common import configure_logger, configure_seed, configure_torch, write_model
+
+logger = logging.getLogger("nets_cli.init")
 
 
-def run_init(args: InitArgs) -> None:
-    # Configure logger
+def run_init(args: InitArgs):
+    # Configure environment
     configure_logger(args)
-    logger = logging.getLogger("nets_cli.init")
-
-    # Set random seed
-    seed = args.seed
-    configure_seed(seed)
+    configure_torch()
+    configure_seed(args.seed)
 
     # Get relevant arguments
     dataset = args.dataset
     architecture = args.architecture
     density = args.density
 
+    # Initialise and save model
+    model = init_model(dataset, architecture, density)
+    write_model(model, args.out_path, file_name="init.pt", overwrite=True)
+
+
+def init_model(dataset: str, architecture: str, density: float) -> MaskedNetwork:
     # Initialise model
-    den = f"{(density * 100):.0f}%"
-    logger.info(f"Initialising {architecture} on {dataset} with density {den}.")
+    logger.info(
+        "Initialising a %s (density %.0f%%) for learning %s classifications.",
+        architecture,
+        density * 100,
+        dataset,
+    )
 
     init_fn = get_init_fn(architecture)
     channels, in_features, out_features = get_dimensions(dataset)
@@ -35,13 +43,11 @@ def run_init(args: InitArgs) -> None:
     else:
         raise NotImplementedError
 
-    logger.info(f"Initialised model: {model}")
-
-    # Save model
-    write_model(model, args.out_path, file_name="init.pt", overwrite=True)
+    logger.debug("Initialised model: %s", model)
+    return model
 
 
-def get_init_fn(architecture: str) -> Callable[[int, int], MaskedNetwork]:
+def get_init_fn(architecture: str) -> Callable[..., MaskedNetwork]:
     if architecture == "lenet":
         from models.lenet import LeNetFeedForwardNetwork
 

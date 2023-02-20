@@ -89,7 +89,7 @@ class BaseArgs:
             if not os.path.exists(os.path.dirname(self.log_file)):
                 errors.append(f"log file directory does not exist: {self.log_file}")
 
-        if self.seed < 0:
+        if self.seed is not None and self.seed < 0:
             errors.append(f"invalid seed: {self.seed}")
 
         # out path should either not exist or be a directory
@@ -115,7 +115,6 @@ def add_common_args(parser):
     parser.add_argument(
         "--seed",
         type=int,
-        default=42,
         help="random seed",
         metavar="SEED",
     )
@@ -133,7 +132,7 @@ def add_common_args(parser):
     parser.add_argument(
         "--log_format",
         type=str,
-        default="%(asctime)s %(levelname)s %(message)s",
+        default="[%(levelname)s] %(message)s",
         help="log format",
     )
 
