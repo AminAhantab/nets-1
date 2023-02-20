@@ -26,11 +26,19 @@ def run_init(args: InitArgs) -> None:
     logger.info(f"Initialising {architecture} on {dataset} with density {den}.")
 
     init_fn = get_init_fn(architecture)
-    model = init_fn(28 * 28, 10)
+    channels, in_features, out_features = get_dimensions(dataset)
+
+    if architecture == "lenet":
+        model = init_fn(in_features, out_features)
+    elif architecture.startswith("conv"):
+        model = init_fn(channels, out_features)
+    else:
+        raise NotImplementedError
+
     logger.info(f"Initialised model: {model}")
 
     # Save model
-    write_model(model, args.out_path, file_name="init.pt")
+    write_model(model, args.out_path, file_name="init.pt", overwrite=True)
 
 
 def get_init_fn(architecture: str) -> Callable[[int, int], MaskedNetwork]:
@@ -39,11 +47,17 @@ def get_init_fn(architecture: str) -> Callable[[int, int], MaskedNetwork]:
 
         return LeNetFeedForwardNetwork
     elif architecture == "conv-2":
-        raise NotImplementedError("conv-2 architecture not implemented yet.")
+        from models.conv import ConvTwoNeuralNetwork
+
+        return ConvTwoNeuralNetwork
     elif architecture == "conv-4":
-        raise NotImplementedError("conv-4 architecture not implemented yet.")
+        from models.conv import ConvFourNeuralNetwork
+
+        return ConvFourNeuralNetwork
     elif architecture == "conv-6":
-        raise NotImplementedError("conv-6 architecture not implemented yet.")
+        from models.conv import ConvSixNeuralNetwork
+
+        return ConvSixNeuralNetwork
     elif architecture == "resnet-18":
         raise NotImplementedError("resnet-18 architecture not implemented yet.")
     elif architecture == "vgg-19":
@@ -54,8 +68,8 @@ def get_init_fn(architecture: str) -> Callable[[int, int], MaskedNetwork]:
 
 def get_dimensions(dataset: str) -> Tuple[int, int]:
     if dataset == "mnist":
-        return 28 * 28, 10
+        return 1, 28 * 28, 10
     elif dataset == "cifar10":
-        return 32 * 32 * 3, 10
+        return 3, 35 * 35, 10
     else:
         raise ValueError(f"Unknown dataset: {dataset}")
