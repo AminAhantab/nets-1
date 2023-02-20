@@ -11,7 +11,7 @@ class ConvTwoNeuralNetwork(MaskedNetwork):
     A convolutional neural network with two convolutional layers and two
     fully-connected layers.
 
-    This network are based on the variants of Simoyan and Zisserman's (2014)
+    This network are based on the variants of Simoyan and Zisserman's (2015)
     orignal VGG architecture presented in Frankle and Carbin (2018).
 
     References:
@@ -34,22 +34,39 @@ class ConvTwoNeuralNetwork(MaskedNetwork):
     def __init__(self, input_channels, output_size):
         super().__init__()
 
-        self.conv1 = MaskedConv2d(input_channels, 64, 3)
-        self.conv2 = MaskedConv2d(64, 64, 3)
-        self.pool1 = nn.MaxPool2d(2, 2)
-        self.fc1 = MaskedLinear(256, 256)
-        self.fc2 = MaskedLinear(256, output_size)
+        self.conv1 = MaskedConv2d(input_channels, 64, 3, padding=1)
+        self.conv2 = MaskedConv2d(64, 64, 3, padding=1)
+        self.pool1 = nn.MaxPool2d(2, 2, padding=0)
+        self.fc1 = MaskedLinear(64 * 14 * 14, 256)
+        self.fc2 = MaskedLinear(256, 256)
+        self.fc3 = MaskedLinear(256, output_size)
 
-    def forward(self, x):
-        x = self.conv1(x)
-        x = F.relu(x)
-        x = self.conv2(x)
-        x = F.relu(x)
+    @property
+    def layers(self):
+        return [
+            self.conv1,
+            self.conv2,
+            self.fc1,
+            self.fc2,
+            self.fc3,
+        ]
+
+    def forward(self, x: torch.Tensor):
+        batch_size = x.shape[0]
+
+        # convolutional layers
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
         x = self.pool1(x)
-        x = x.view(-1, 256)
-        x = self.fc1(x)
-        x = F.relu(x)
-        x = self.fc2(x)
+
+        # fully-connected layers
+        x = x.view(batch_size, -1)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        
+        x = torch.log_softmax(x, dim=1)
+
         return x
 
     def loss(self, x, y):

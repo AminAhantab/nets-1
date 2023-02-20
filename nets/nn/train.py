@@ -1,8 +1,12 @@
+import logging
+
 import torch
 from torch.utils.data import DataLoader
 from torch.optim import Optimizer
 
 from .masked import MaskedNetwork
+
+logger = logging.getLogger("nets.train")
 
 
 def train_model(
@@ -11,6 +15,8 @@ def train_model(
     opt: Optimizer,
     epochs: int = None,
     iterations: int = None,
+    debug_every: int = 100,
+    device: torch.device = None,
 ) -> float:
     """
     Train the model for a given number of epochs or iterations.
@@ -36,17 +42,39 @@ def train_model(
 
     # Train the model
     current_iteration = 0
+    epoch = 1
+    logger.info(f"Beginning training loop for {epochs} epochs.")
+    logger.debug(f"Training for {iterations} iterations.")
     while current_iteration < iterations:
         for X, y in data:
+            # Move data to device
+            if device is not None:
+                X = X.to(device)
+                y = y.to(device)
+
+            # Update the current iteration
             current_iteration += 1
+
+            # Forward and backward pass
             logits = model(X)
+            logger.debug(
+                f"Iteration {current_iteration}: X={X.shape}, y={y.shape} logits={logits.shape}"
+            )
             loss = model.loss(logits, y)
             loss.backward()
             opt.step()
             opt.zero_grad()
 
+            # Log the loss
+            if current_iteration % debug_every == 0:
+                logger.debug(f"Iteration {current_iteration}: loss={loss.item():.4f}")
+
+            # Check if we've reached the maximum number of iterations
             if current_iteration >= iterations:
                 break
+
+        logger.info(f"Epoch {epoch}/{epochs} complete: loss={loss.item():.4f}")
+        epoch += 1
 
     return loss.item()
 

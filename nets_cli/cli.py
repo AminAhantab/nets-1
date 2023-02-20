@@ -1,6 +1,6 @@
 import argparse
+import logging
 
-from nets import __version__
 from nets_cli.args import (
     InitArgs,
     PruneArgs,
@@ -9,6 +9,8 @@ from nets_cli.args import (
     add_arguments,
 )
 from nets_cli.runners import run_init, run_search, run_train, run_prune
+
+logger = logging.getLogger("nets_cli")
 
 
 def init_parser():
@@ -22,7 +24,7 @@ def init_parser():
     parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s " + __version__,
+        version="%(prog)s " + "v0.1.0",
     )
 
     return add_arguments(parser)
@@ -54,5 +56,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        print("An error occurred.")
-        print(e)
+        logger.critical("An error occurred.")
+        logger.critical(e)
+        raise e

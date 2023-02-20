@@ -3,7 +3,7 @@ from typing import Union
 import torch
 
 from .base import BaseNetwork
-from .layers import MaskedLinear
+from .layers import MaskedLayer
 
 Batch = tuple[torch.Tensor, torch.Tensor]
 
@@ -13,7 +13,7 @@ class MaskedNetwork(BaseNetwork):
     Base class for all networks with masked connections.
 
     Attributes:
-        layers (list[MaskedLinear]): The layers of the network.
+        layers (list[MaskedLayer]): The layers of the network.
         mask (list[torch.Tensor]): The current mask of the network.
 
     Methods:
@@ -21,7 +21,7 @@ class MaskedNetwork(BaseNetwork):
         as_ticket(): Return the winning ticket of the network.
     """
 
-    layers: list[MaskedLinear]
+    layers: list[MaskedLayer]
     mask: list[torch.Tensor]
 
     def __init__(self) -> None:
@@ -29,7 +29,7 @@ class MaskedNetwork(BaseNetwork):
         Initialize the network.
 
         Args:
-            layers (list[MaskedLinear]): The layers of the network.
+            layers (list[MaskedLayer]): The layers of the network.
         """
         super().__init__()
 
@@ -38,7 +38,7 @@ class MaskedNetwork(BaseNetwork):
     def _backward_hook(self, _module, _grad_input, _grad_output):
         """Hook for the backward pass."""
         for layer in self.layers:
-            assert isinstance(layer, MaskedLinear)
+            assert isinstance(layer, MaskedLayer)
             if layer.weight.grad is not None:
                 layer.weight.grad *= layer.mask
 

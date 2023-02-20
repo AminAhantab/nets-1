@@ -1,7 +1,6 @@
 import logging
 from typing import Callable, Tuple
 
-from nets.nn.masked import MaskedNetwork
 from nets_cli.args import InitArgs
 from .common import configure_logger, configure_seed, configure_torch, write_model
 
@@ -9,6 +8,8 @@ logger = logging.getLogger("nets_cli.init")
 
 
 def run_init(args: InitArgs):
+    from nets.nn.masked import MaskedNetwork
+
     # Configure environment
     configure_logger(args)
     configure_torch()
@@ -24,7 +25,7 @@ def run_init(args: InitArgs):
     write_model(model, args.out_path, file_name="init.pt", overwrite=True)
 
 
-def init_model(dataset: str, architecture: str, density: float) -> MaskedNetwork:
+def init_model(dataset: str, architecture: str, density: float):
     # Initialise model
     logger.info(
         "Initialising a %s (density %.0f%%) for learning %s classifications.",
@@ -47,7 +48,7 @@ def init_model(dataset: str, architecture: str, density: float) -> MaskedNetwork
     return model
 
 
-def get_init_fn(architecture: str) -> Callable[..., MaskedNetwork]:
+def get_init_fn(architecture: str):
     if architecture == "lenet":
         from models.lenet import LeNetFeedForwardNetwork
 
