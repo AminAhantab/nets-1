@@ -131,20 +131,22 @@ class ConvFourNeuralNetwork(MaskedNetwork):
     ):
         super().__init__(in_channels, in_features, out_features)
 
-        # Define the sizes of the layers
+        # Define the sizes of the convolutional layers
         # from Frankle and Carbin (2019)
         conv_sizes = [64, 64, 128, 128]
-        fc_sizes = [256, 256, out_features]
-
-        # Define the convolutional layers
         conv_1_channels = (in_channels, conv_sizes[0])
         conv_2_channels = (conv_sizes[0], conv_sizes[1])
         conv_3_channels = (conv_sizes[1], conv_sizes[2])
         conv_4_channels = (conv_sizes[2], conv_sizes[3])
 
-        # Calculate the size of the first fully-connected layer
-        reduced_size = in_features - 2 * 2  # After two 3x3 convolutions
-        fc1_size = conv_sizes[3] * (reduced_size // 2) * (reduced_size // 2)
+        # Define the sizes of the fully-connected layers
+        # from Frankle and Carbin (2019)
+        fc_sizes = [256, 256, out_features]
+        post_conv_size = in_features
+        for _ in range(len(conv_sizes) // 2):
+            post_conv_size = (post_conv_size[0] - 2 * 2, post_conv_size[1] - 2 * 2)
+            post_conv_size = (post_conv_size[0] // 2, post_conv_size[1] // 2)
+        fc1_size = conv_sizes[-1] * post_conv_size[0] * post_conv_size[1]
 
         # Define the layers
         self.conv1 = MaskedConv2d(*conv_1_channels, 3, padding=1, bias=bias)
@@ -235,12 +237,9 @@ class ConvSixNeuralNetwork(MaskedNetwork):
     ):
         super().__init__(in_channels, in_features, out_features)
 
-        # Define the sizes of the layers
+        # Define the sizes of the convolutional layers
         # from Frankle and Carbin (2019)
         conv_sizes = [64, 64, 128, 128, 256, 256]
-        fc_sizes = [256, 256, out_features]
-
-        # Define the convolutional layers
         conv_1_channels = (in_channels, conv_sizes[0])
         conv_2_channels = (conv_sizes[0], conv_sizes[1])
         conv_3_channels = (conv_sizes[1], conv_sizes[2])
@@ -248,23 +247,39 @@ class ConvSixNeuralNetwork(MaskedNetwork):
         conv_5_channels = (conv_sizes[3], conv_sizes[4])
         conv_6_channels = (conv_sizes[4], conv_sizes[5])
 
-        # Calculate the size of the first fully-connected layer
-        reduced_size = in_features - 2 * 2  # After two 3x3 convolutions
-        fc1_size = conv_sizes[3] * (reduced_size // 2) * (reduced_size // 2)
+        # Define the sizes of the fully-connected layers
+        # from Frankle and Carbin (2019)
+        fc_sizes = [256, 256, out_features]
+        post_conv_size = in_features
+        for _ in range(len(conv_sizes) // 2):
+            print(post_conv_size)
+            post_conv_size = (post_conv_size[0] - 2 * 2, post_conv_size[1] - 2 * 2)
+            post_conv_size = (post_conv_size[0] // 2, post_conv_size[1] // 2)
+        fc1_size = conv_sizes[-1] * post_conv_size[0] * post_conv_size[1]
+        print(fc1_size)
 
         # Define the layers
         self.conv1 = MaskedConv2d(*conv_1_channels, 3, padding=1, bias=bias)
+        print(self.conv1.weight.shape)
         self.conv2 = MaskedConv2d(*conv_2_channels, 3, padding=1, bias=bias)
+        print(self.conv2.weight.shape)
         self.pool1 = nn.MaxPool2d(2, 2, padding=0)
         self.conv3 = MaskedConv2d(*conv_3_channels, 3, padding=1, bias=bias)
+        print(self.conv3.weight.shape)
         self.conv4 = MaskedConv2d(*conv_4_channels, 3, padding=1, bias=bias)
+        print(self.conv4.weight.shape)
         self.pool2 = nn.MaxPool2d(2, 2, padding=0)
         self.conv5 = MaskedConv2d(*conv_5_channels, 3, padding=1, bias=bias)
+        print(self.conv5.weight.shape)
         self.conv6 = MaskedConv2d(*conv_6_channels, 3, padding=1, bias=bias)
+        print(self.conv6.weight.shape)
         self.pool3 = nn.MaxPool2d(2, 2, padding=0)
         self.fc1 = MaskedLinear(fc1_size, fc_sizes[0], bias=bias)
+        print(self.fc1.weight.shape)
         self.fc2 = MaskedLinear(fc_sizes[0], fc_sizes[1], bias=bias)
+        print(self.fc2.weight.shape)
         self.fc3 = MaskedLinear(fc_sizes[1], fc_sizes[2], bias=bias)
+        print(self.fc3.weight.shape)
 
     @property
     def layers(self):

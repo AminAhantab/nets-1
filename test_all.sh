@@ -52,19 +52,19 @@ $PYTHON_BIN -m nets_cli init \
     $INIT_ARGS
 
 ## Conv-4
-# $PYTHON_BIN -m nets_cli init \
-#     --data=mnist \
-#     --arch=conv-4 \
-#     --density=1.0 \
-#     --out_path=$OUT_PATH/conv-4-mnist.init.pt \
-#     $INIT_ARGS
+$PYTHON_BIN -m nets_cli init \
+    --data=mnist \
+    --arch=conv-4 \
+    --density=1.0 \
+    --out_path=$OUT_PATH/conv-4-mnist.init.pt \
+    $INIT_ARGS
 
-# $PYTHON_BIN -m nets_cli init \
-#     --data=cifar10 \
-#     --arch=conv-4 \
-#     --density=1.0 \
-#     --out_path=$OUT_PATH/conv-4-cifar10.init.pt \
-#     $INIT_ARGS
+$PYTHON_BIN -m nets_cli init \
+    --data=cifar10 \
+    --arch=conv-4 \
+    --density=1.0 \
+    --out_path=$OUT_PATH/conv-4-cifar10.init.pt \
+    $INIT_ARGS
 
 ## Conv-6
 # $PYTHON_BIN -m nets_cli init \
@@ -110,18 +110,18 @@ $PYTHON_BIN -m nets_cli train \
     --out_path=$OUT_PATH/conv-2-cifar10.train.pt \
     $TRAIN_ARGS
 
-# ## Conv-4
-# $PYTHON_BIN -m nets_cli train \
-#     --data=mnist \
-#     --model=$OUT_PATH/conv-4-mnist.init.pt \
-#     --out_path=$OUT_PATH/conv-4-mnist.train.pt \
-#     $TRAIN_ARGS
+## Conv-4
+$PYTHON_BIN -m nets_cli train \
+    --data=mnist \
+    --model=$OUT_PATH/conv-4-mnist.init.pt \
+    --out_path=$OUT_PATH/conv-4-mnist.train.pt \
+    $TRAIN_ARGS
 
-# $PYTHON_BIN -m nets_cli train \
-#     --data=cifar10 \
-#     --model=$OUT_PATH/conv-4-cifar10.init.pt \
-#     --out_path=$OUT_PATH/conv-4-cifar10.train.pt \
-#     $TRAIN_ARGS
+$PYTHON_BIN -m nets_cli train \
+    --data=cifar10 \
+    --model=$OUT_PATH/conv-4-cifar10.init.pt \
+    --out_path=$OUT_PATH/conv-4-cifar10.train.pt \
+    $TRAIN_ARGS
 
 # ## Conv-6
 # $PYTHON_BIN -m nets_cli train \
