@@ -1,4 +1,5 @@
 import logging
+from typing import Callable, Dict
 
 import torch
 from torch.utils.data import DataLoader
@@ -15,8 +16,8 @@ def train_model(
     opt: Optimizer,
     epochs: int = None,
     iterations: int = None,
-    debug_every: int = 100,
     device: torch.device = None,
+    callbacks: Dict[str, Callable] = None,
 ) -> float:
     """
     Train the model for a given number of epochs or iterations.
@@ -31,6 +32,7 @@ def train_model(
     Returns:
         The average loss per epoch.
     """
+    # Determine the number of iterations
     if epochs is None and iterations is None:
         epochs = 1
 
@@ -42,10 +44,12 @@ def train_model(
 
     # Train the model
     current_iteration = 0
-    epoch = 1
     logger.info(f"Beginning training loop for {epochs} epochs.")
     logger.debug(f"Training for {iterations} iterations.")
-    while current_iteration < iterations:
+
+    stopping_triggered = False
+    while not stopping_triggered and current_iteration < iterations:
+        logger.info(f"Epoch {current_iteration // len(data) + 1}/{epochs}...")
         for X, y in data:
             # Move data to device
             if device is not None:
@@ -57,24 +61,18 @@ def train_model(
 
             # Forward and backward pass
             logits = model(X)
-            logger.debug(
-                f"Iteration {current_iteration}: X={X.shape}, y={y.shape} logits={logits.shape}"
-            )
             loss = model.loss(logits, y)
             loss.backward()
             opt.step()
             opt.zero_grad()
 
-            # Log the loss
-            if current_iteration % debug_every == 0:
-                logger.debug(f"Iteration {current_iteration}: loss={loss.item():.4f}")
+            _iteration_callbacks(model, callbacks, current_iteration, loss.item())
 
-            # Check if we've reached the maximum number of iterations
-            if current_iteration >= iterations:
+            stopping_triggered = _check_early_stopping(model, callbacks)
+            if stopping_triggered:
                 break
 
-        logger.info(f"Epoch {epoch}/{epochs} complete: loss={loss.item():.4f}")
-        epoch += 1
+        _epoch_callbacks(model, callbacks, current_iteration, loss.item())
 
     return loss.item()
 
@@ -95,8 +93,37 @@ def evaluate_model(model: MaskedNetwork, data: DataLoader) -> tuple[float, float
         losses = torch.empty(len(data))
         accuracies = torch.empty(len(data))
         for i, (X, y) in enumerate(data):
-            logits = model(X.unsqueeze(0))
-            losses[i] = model.loss(logits, torch.tensor(y).unsqueeze(0))
-            accuracies[i] = model.accuracy(logits, torch.tensor(y).unsqueeze(0))
+            logits = model(X)
+            losses[i] = model.loss(logits, y)
+            accuracies[i] = model.accuracy(logits, y)
 
     return losses.mean().item(), accuracies.mean().item()
+
+
+def _check_early_stopping(model: MaskedNetwork, callbacks: Dict[str, Callable]) -> bool:
+    if callbacks is None:
+        return False
+    
+    if "early_stopping" in callbacks:
+        for callback in callbacks["early_stopping"]:
+            if callback(model):
+                return True
+    
+    return False
+
+def _iteration_callbacks(model: MaskedNetwork, callbacks: Dict[str, Callable], iteration: int, loss: float):
+    if callbacks is None:
+        return
+
+    if "iteration" in callbacks:
+        for callback in callbacks["iteration"]:
+            callback(model, iteration, loss)
+
+def _epoch_callbacks(model: MaskedNetwork, callbacks: Dict[str, Callable], iteration: int, loss: float):
+    if callbacks is None:
+        return
+
+    if "epoch" in callbacks:
+        for callback in callbacks["epoch"]:
+            callback(model, iteration, loss)
+    

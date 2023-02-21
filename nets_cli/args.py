@@ -309,6 +309,12 @@ class TrainArgs(GradientDescentArgs):
     model_path: str
     """Path to model to train."""
 
+    csv_path: str
+    """Path to csv file to save results to."""
+
+    no_cuda: bool
+    """Disable CUDA."""
+
     def __post_init__(self):
         super().__post_init__()
 
@@ -333,6 +339,24 @@ def add_train_args(parser: ArgumentParser):
 
     # Add gradient descent args
     parser = add_gradient_descent_args(parser)
+
+    # csv path
+    parser.add_argument(
+        "--csv_path",
+        dest="csv_path",
+        type=str,
+        default="",
+        help="path to csv file to save results to",
+        metavar="FILE",
+    )
+
+    # no_cuda
+    parser.add_argument(
+        "--no_cuda",
+        dest="no_cuda",
+        action="store_true",
+        help="disable CUDA",
+    )
 
     return parser
 

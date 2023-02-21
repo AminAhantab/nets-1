@@ -2,6 +2,8 @@ import logging
 import os
 from typing import Union
 
+import pandas as pd
+
 from nets_cli.args import BaseArgs
 from .utils import create_path, hydrate_class_name
 
@@ -67,7 +69,7 @@ def configure_seed(seed: Union[int, None]):
     logger.info(f"Running in deterministic mode with seed {seed}.")
 
 
-def configure_torch() -> str:
+def configure_torch(no_cuda: bool = False) -> str:
     """
     Configures PyTorch.
 
@@ -76,11 +78,17 @@ def configure_torch() -> str:
     """
     try:
         import torch
+
         import torch.multiprocessing as mp
 
         # PyTorch handles multiprocessing in a specific way.
         # NOTE: This may cause difficulties on Windows.
         mp.set_start_method("spawn", force=True)
+
+        if no_cuda:
+            logger.info("PyTorch cuda is disabled")
+            torch.set_default_tensor_type("torch.FloatTensor")
+            return "cpu"
 
         logger.info("Package torch version: %s", torch.__version__)
         if torch.cuda.is_available():
@@ -144,6 +152,26 @@ def write_model(
     # Write the model to disk.
     logger.info(f"Saving model to {file_path}.")
     torch.save(data, file_path)
+
+
+def write_df(
+    df: pd.DataFrame,
+    out_path: str,
+    file_name: str = "results.csv",
+    overwrite: bool = False,
+):
+    # Create the directory if it does not exist, and return the full path.
+    file_path = create_path(out_path, file_name)
+
+    # Check if the file already exists.
+    if os.path.exists(file_path):
+        logger.debug(f"File already exists: {file_path}")
+        if not overwrite:
+            raise FileExistsError(f"File already exists: {file_path}")
+
+    # Write the model to disk.
+    logger.info(f"Saving dataframe to {file_path}.")
+    df.to_csv(file_path, index=False)
 
 
 def load_model(file_path: str):

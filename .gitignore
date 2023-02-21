@@ -1,4 +1,4 @@
-*.pt
+data/results/*
 
 data/MNIST
 data/cifar-*

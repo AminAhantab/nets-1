@@ -12,10 +12,13 @@ def is_dir(path: str) -> bool:
     Returns:
         Whether the path is a directory.
     """
-    if path.endswith(".pt"):
-        return False
-
-    return True
+    if os.path.exists(path):
+        return os.path.isdir(path)
+    else:
+        if path.endswith(os.path.sep):
+            return True
+        else:
+            return False
 
 
 def create_path(path: str, file_name: str = "model.pt") -> str:
