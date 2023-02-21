@@ -1,5 +1,4 @@
-from itertools import cycle
-from typing import List
+from typing import List, Tuple
 
 import torch
 from torch.nn import functional as F
@@ -26,7 +25,13 @@ class LeNetFeedForwardNetwork(MaskedNetwork):
         layer_3 (MaskedLinear): The output layer.
     """
 
-    def __init__(self, in_features: int, out_features: int, bias: bool = True):
+    def __init__(
+        self,
+        in_channels: int,
+        in_features: Tuple[int, int],
+        out_features: int,
+        bias: bool = True,
+    ):
         """
         Initialize the network.
 
@@ -34,12 +39,13 @@ class LeNetFeedForwardNetwork(MaskedNetwork):
             in_features (int): The number of input features.
             out_features (int): The number of output features.
         """
-        super().__init__()
+        super().__init__(in_channels, in_features, out_features)
 
         h1, h2 = 300, 100
-        self.layer_1 = MaskedLinear(in_features, h1, bias=bias)
-        self.layer_2 = MaskedLinear(h1, h2, bias=bias)
-        self.layer_3 = MaskedLinear(h2, out_features, bias=bias)
+        input_size = in_channels * in_features[0] * in_features[1]
+        self.fc1 = MaskedLinear(input_size, h1, bias=bias)
+        self.fc2 = MaskedLinear(h1, h2, bias=bias)
+        self.fc3 = MaskedLinear(h2, out_features, bias=bias)
 
     @property
     def layers(self) -> List[MaskedLinear]:
@@ -49,7 +55,7 @@ class LeNetFeedForwardNetwork(MaskedNetwork):
         Returns:
             list[MaskedLinear]: The layers of the network.
         """
-        return [self.layer_1, self.layer_2, self.layer_3]
+        return [self.fc1, self.fc2, self.fc3]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -104,6 +110,8 @@ class LeNetFeedForwardNetwork(MaskedNetwork):
 
 
 if __name__ == "__main__":
+    from itertools import cycle
+
     import pandas as pd
     import matplotlib.pyplot as plt
 
@@ -129,7 +137,7 @@ if __name__ == "__main__":
         mnist_val = DataLoader(mnist_val, batch_size=batch_size)
 
         # model
-        model = LeNetFeedForwardNetwork(28 * 28, 10)
+        model = LeNetFeedForwardNetwork(1, (28, 28), 10)
 
         # infinite iterator over the training set
         mnist_train = cycle(mnist_train)

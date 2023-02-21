@@ -36,12 +36,19 @@ def run_train(args: TrainArgs) -> None:
 
     # Load model
     model = load_model(model_path)
+    logger.info("Moving model to device %s.", device)
+    model.to(device)
 
     # Initialise optimiser
     opt = get_optimiser(model, optimiser, learning_rate)
 
     # Initialise data loader
-    train_loader = make_data_loader(train_data, batch_size=batch_size, device=device)
+    train_loader = make_data_loader(
+        train_data,
+        batch_size=batch_size,
+        device=device,
+        seed=args.seed,
+    )
 
     # Train model
     # TODO: Implement callbacks (early stopping, checkpointing, validation, etc.)
@@ -92,7 +99,16 @@ def get_dataset(dataset: str):
         raise ValueError(f"Unknown dataset {dataset}.")
 
 
-def make_data_loader(dataset, batch_size: int, device: str):
+def get_dimensions(dataset: str):
+    if dataset == "mnist":
+        return 1, 28, 28
+    elif dataset == "cifar10":
+        return 3, 32, 32
+    else:
+        raise ValueError(f"Unknown dataset {dataset}.")
+
+
+def make_data_loader(dataset, batch_size: int, device: str, seed: int = None):
     import torch
     from torch.utils.data import DataLoader
 
@@ -103,7 +119,7 @@ def make_data_loader(dataset, batch_size: int, device: str):
         batch_size=batch_size,
         shuffle=True,
         num_workers=4,
-        generator=torch.Generator(device),
+        generator=torch.Generator(device).manual_seed(seed),
         pin_memory=True,
     )
 

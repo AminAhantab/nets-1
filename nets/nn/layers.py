@@ -16,6 +16,7 @@ PADDING_MODES = {"zeros", "reflect", "replicate", "circular"}
 class MaskedLayer(nn.Module, ABC):
     """A layer with a pruning mask."""
 
+    weight: Tensor
     mask: Tensor
 
     def __init__(self) -> None:

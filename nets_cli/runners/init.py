@@ -1,82 +1,78 @@
 import logging
-from typing import Callable, Tuple
 
-from nets_cli.args import InitArgs
+from ..args import InitArgs
+from .utils import hydrate_architecture, hydrate_data_dimensions
 from .common import configure_logger, configure_seed, configure_torch, write_model
 
 logger = logging.getLogger("nets_cli.init")
 
 
 def run_init(args: InitArgs):
-    from nets.nn.masked import MaskedNetwork
-
     # Configure environment
     configure_logger(args)
     configure_torch()
     configure_seed(args.seed)
+
+    from nets.nn import MaskedNetwork
 
     # Get relevant arguments
     dataset = args.dataset
     architecture = args.architecture
     density = args.density
 
-    # Initialise and save model
-    model = init_model(dataset, architecture, density)
+    # Initialise  model
+    constructor = hydrate_architecture(architecture)
+    dimensions = hydrate_data_dimensions(dataset)
+    model = constructor(*dimensions, bias=False)
+
+    # Assert for type checking
+    assert isinstance(model, MaskedNetwork)
+
+    # Initialise masks
+    init_masks(model, density)
+
+    # Log model creation
+    logger.info(
+        "Initialised a %s (density %.0f%%) for learning %s classifications.",
+        architecture,
+        model.density() * 100,
+        dataset,
+    )
+    logger.debug("Initialised model: %s", model)
+
+    # Write model to disk
     write_model(model, args.out_path, file_name="init.pt", overwrite=True)
 
 
-def init_model(dataset: str, architecture: str, density: float):
-    # Initialise model
-    logger.info(
-        "Initialising a %s (density %.0f%%) for learning %s classifications.",
-        architecture,
-        density * 100,
-        dataset,
-    )
+def init_masks(model, density: float):
+    import torch
+    from torch.nn import Parameter
 
-    init_fn = get_init_fn(architecture)
-    channels, in_features, out_features = get_dimensions(dataset)
+    from nets.nn import MaskedNetwork, MaskedLayer
+    from nets.utils import uniform_mask
 
-    if architecture == "lenet":
-        model = init_fn(in_features, out_features)
-    elif architecture.startswith("conv"):
-        model = init_fn(channels, out_features)
-    else:
-        raise NotImplementedError
+    assert isinstance(model, MaskedNetwork)
 
-    logger.debug("Initialised model: %s", model)
-    return model
+    if density == 0.0:
+        logger.info("Initialising model with all weights masked.")
+        for layer in model.layers:
+            assert isinstance(layer, MaskedLayer)
+            mask = torch.zeros(layer.mask.shape)
+            layer.mask = Parameter(mask, requires_grad=False)
 
+        return
 
-def get_init_fn(architecture: str):
-    if architecture == "lenet":
-        from models.lenet import LeNetFeedForwardNetwork
+    if density == 1.0:
+        logger.info("Initialising model with all weights unmasked.")
+        for layer in model.layers:
+            assert isinstance(layer, MaskedLayer)
+            mask = torch.ones(layer.mask.shape)
+            layer.mask = Parameter(mask, requires_grad=False)
 
-        return LeNetFeedForwardNetwork
-    elif architecture == "conv-2":
-        from models.conv import ConvTwoNeuralNetwork
+        return
 
-        return ConvTwoNeuralNetwork
-    elif architecture == "conv-4":
-        from models.conv import ConvFourNeuralNetwork
-
-        return ConvFourNeuralNetwork
-    elif architecture == "conv-6":
-        from models.conv import ConvSixNeuralNetwork
-
-        return ConvSixNeuralNetwork
-    elif architecture == "resnet-18":
-        raise NotImplementedError("resnet-18 architecture not implemented yet.")
-    elif architecture == "vgg-19":
-        raise NotImplementedError("vgg-19 architecture not implemented yet.")
-    else:
-        raise ValueError(f"Unknown architecture: {architecture}")
-
-
-def get_dimensions(dataset: str) -> Tuple[int, int]:
-    if dataset == "mnist":
-        return 1, 28 * 28, 10
-    elif dataset == "cifar10":
-        return 3, 35 * 35, 10
-    else:
-        raise ValueError(f"Unknown dataset: {dataset}")
+    logger.info(f"Initialising model with random masks (p = {density}).")
+    for layer in model.layers:
+        assert isinstance(layer, MaskedLayer)
+        mask = uniform_mask(layer.mask.shape, density)
+        layer.mask = Parameter(mask, requires_grad=False)

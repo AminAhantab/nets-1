@@ -17,14 +17,15 @@ class MaskedNetwork(BaseNetwork):
         mask (list[torch.Tensor]): The current mask of the network.
 
     Methods:
-        prune(p_values): Prune the network by setting the weights of some connections to zero.
+        prune(p_values): Prune the network by setting the weights of some connections to
+            zero.
         as_ticket(): Return the winning ticket of the network.
     """
 
     layers: list[MaskedLayer]
     mask: list[torch.Tensor]
 
-    def __init__(self) -> None:
+    def __init__(self, in_channels: int, in_features: int, out_features: int) -> None:
         """
         Initialize the network.
 
@@ -32,6 +33,8 @@ class MaskedNetwork(BaseNetwork):
             layers (list[MaskedLayer]): The layers of the network.
         """
         super().__init__()
+
+        self.dimensions = (in_channels, in_features, out_features)
 
         self.register_full_backward_hook(self._backward_hook)
 
