@@ -1,3 +1,4 @@
+import itertools
 import logging
 from typing import Callable, Dict
 
@@ -34,20 +35,31 @@ def train_model(
     model.train()
 
     # Train the model
-    current_iteration = 0
+    iteration = 0
+    epoch = 0
     stopping_triggered = False
     while not stopping_triggered:
-        epoch = current_iteration // len(data) + 1
-        logger.info(f"Epoch {epoch}...")
+        if _check_early_stopping(model, callbacks, iteration + 1, epoch + 1):
+            logger.info("Early stopping triggered.")
+            break
+
+        # Update the current epoch
+        epoch += 1
+        logger.info("Beginning epoch %d", epoch)
 
         for X, y in data:
+            stopping_triggered = _check_early_stopping(model, callbacks, iteration + 1, epoch)
+            if stopping_triggered:
+                logger.info("Early stopping triggered.")
+                break
+
+            # Update the current iteration
+            iteration += 1
+
             # Move data to device
             if device is not None:
                 X = X.to(device)
                 y = y.to(device)
-
-            # Update the current iteration
-            current_iteration += 1
 
             # Forward and backward pass
             logits = model(X)
@@ -56,14 +68,11 @@ def train_model(
             opt.step()
             opt.zero_grad()
 
-            _iteration_callbacks(model, callbacks, current_iteration, epoch, loss.item())
+            # Run callbacks
+            _iteration_callbacks(model, callbacks, iteration, epoch, loss.item())
 
-            stopping_triggered = _check_early_stopping(model, callbacks, current_iteration, epoch, loss.item())
-            if stopping_triggered:
-                logger.info("Early stopping triggered.")
-                break
-
-        _epoch_callbacks(model, callbacks, current_iteration, epoch, loss.item())
+        # Run callbacks
+        _epoch_callbacks(model, callbacks, iteration, epoch, loss.item())
 
     return loss.item()
 
@@ -96,13 +105,13 @@ def evaluate_model(model: MaskedNetwork, data: DataLoader, device: torch.device 
     return losses.mean().item(), accuracies.mean().item()
 
 
-def _check_early_stopping(model: MaskedNetwork, callbacks: Dict[str, Callable], iteration: int, epoch: int, loss: float) -> bool:
+def _check_early_stopping(model: MaskedNetwork, callbacks: Dict[str, Callable], iteration: int, epoch: int) -> bool:
     if callbacks is None:
         return False
     
     if "early_stopping" in callbacks:
         for callback in callbacks["early_stopping"]:
-            if callback(model, iteration, epoch, loss):
+            if callback(model, iteration, epoch):
                 return True
     
     return False

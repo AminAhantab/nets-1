@@ -101,22 +101,22 @@ def log_gpu_memory(every: int = None):
 
 
 def max_epochs(df: pd.DataFrame, max_epochs: int):
-    def _cb(model, iteration: int, epoch: int, loss: float):
+    def _cb(model, iteration: int, epoch: int):
         if max_epochs is None:
             return False
 
-        if epoch >= max_epochs:
+        if epoch > max_epochs:
             return True
 
     return _cb
 
 
 def max_iterations(df: pd.DataFrame, max_iterations: int):
-    def _cb(model, iteration: int, epoch: int, loss: float):
+    def _cb(model, iteration: int, epoch: int):
         if max_iterations is None:
             return False
 
-        if iteration >= max_iterations:
+        if iteration > max_iterations:
             return True
 
     return _cb
@@ -127,7 +127,7 @@ def max_seconds(df: pd.DataFrame, max_seconds: int):
 
     start_time = time.time()
 
-    def _cb(model, iteration: int, epoch: int, loss: float):
+    def _cb(model, iteration: int, epoch: int):
         if max_seconds is None:
             return False
 
@@ -138,7 +138,7 @@ def max_seconds(df: pd.DataFrame, max_seconds: int):
 
 
 def min_val_loss(df: pd.DataFrame, min_loss: float, patience: int = 0):
-    def _cb(model, iteration: int, epoch: int, loss: float):
+    def _cb(model, iteration: int, epoch: int):
         if min_loss is None:
             return False
 
@@ -148,7 +148,7 @@ def min_val_loss(df: pd.DataFrame, min_loss: float, patience: int = 0):
         if "val_loss" not in df.columns:
             return False
 
-        if df.loc[iteration, "val_loss"] <= min_loss:
+        if df.loc[iteration - 1, "val_loss"] <= min_loss:
             _cb.counter += 1
 
         if _cb.counter > patience:

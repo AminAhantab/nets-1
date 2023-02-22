@@ -256,11 +256,11 @@ class GradientDescentArgs(BaseArgs):
         if self.max_epochs is not None and self.max_epochs <= 0:
             errors.append(f"invalid number of epochs: {self.max_epochs}")
 
-        # One or zero of max_iterations or max_epochs must be specified
-        if self.max_iterations is not None and self.max_epochs is not None:
-            errors.append(
-                "either max_iterations or max_epochs can be specified, not both"
-            )
+        # exactly one of max_iterations and max_epochs should be set
+        if self.max_iterations is None and self.max_epochs is None:
+            errors.append("either max_iterations or max_epochs must be set")
+        elif self.max_iterations is not None and self.max_epochs is not None:
+            errors.append("only one of max_iterations or max_epochs can be set")
 
         if self.batch_size <= 0:
             errors.append(f"invalid batch size: {self.batch_size}")

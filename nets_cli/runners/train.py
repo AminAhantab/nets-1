@@ -25,7 +25,6 @@ def run_train(args: TrainArgs) -> None:
     dataset = args.dataset
     optimiser = args.optimiser
     learning_rate = args.learning_rate
-    max_epochs = args.max_epochs
     batch_size = args.batch_size
     val_size = args.val_size
 
@@ -43,8 +42,8 @@ def run_train(args: TrainArgs) -> None:
     # Initialise the data loaders
     kwargs = {"pin_memory": True, "num_workers": 0}
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, **kwargs)
-    val_loader = DataLoader(val_data, batch_size=99_999, **kwargs)
-    test_loader = DataLoader(test_data, batch_size=99_999, **kwargs)
+    val_loader = DataLoader(val_data, batch_size=batch_size, **kwargs)
+    test_loader = DataLoader(test_data, batch_size=batch_size, **kwargs)
 
     # Initialise the callbacks
     results = pd.DataFrame()
