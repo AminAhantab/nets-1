@@ -223,8 +223,21 @@ class GradientDescentArgs(BaseArgs):
     """Learning rate for training."""
     max_epochs: int
     """Number of epochs to train for."""
+    max_iterations: int
+    """Maximum number of iterations to train for."""
     batch_size: int
     """Batch size for training."""
+    no_cuda: bool
+    """Disable CUDA."""
+    val_size: int
+    """Validation set size."""
+
+    log_every: int
+    """Log every n batches."""
+    log_val_every: int
+    """Log validation metrics every n batches."""
+    log_test_every: int
+    """Log test metrics every n batches."""
 
     def __post_init__(self):
         errors = []
@@ -237,11 +250,32 @@ class GradientDescentArgs(BaseArgs):
         if self.learning_rate <= 0:
             errors.append(f"invalid learning rate: {self.learning_rate}")
 
-        if self.max_epochs <= 0:
+        if self.max_iterations is not None and self.max_iterations <= 0:
+            errors.append(f"invalid number of iterations: {self.max_iterations}")
+
+        if self.max_epochs is not None and self.max_epochs <= 0:
             errors.append(f"invalid number of epochs: {self.max_epochs}")
+
+        # exactly one of max_iterations and max_epochs should be set
+        if self.max_iterations is None and self.max_epochs is None:
+            errors.append("either max_iterations or max_epochs must be set")
+        elif self.max_iterations is not None and self.max_epochs is not None:
+            errors.append("only one of max_iterations or max_epochs can be set")
 
         if self.batch_size <= 0:
             errors.append(f"invalid batch size: {self.batch_size}")
+
+        if self.val_size < 0:
+            errors.append(f"invalid validation set size: {self.val_size}")
+
+        if self.log_every is not None and self.log_every < 0:
+            errors.append(f"invalid log_every: {self.log_every}")
+
+        if self.log_val_every is not None and self.log_val_every < 0:
+            errors.append(f"invalid log_val_every: {self.log_val_every}")
+
+        if self.log_test_every is not None and self.log_test_every < 0:
+            errors.append(f"invalid log_test_every: {self.log_test_every}")
 
         if len(errors) > 0:
             raise ValueError("\n".join(errors))
@@ -278,13 +312,23 @@ def add_gradient_descent_args(parser: ArgumentParser):
         metavar="LR",
     )
 
+    # epochs and iterations are mutually exclusive
+    group = parser.add_mutually_exclusive_group()
+
     # epochs (int)
-    parser.add_argument(
+    group.add_argument(
         "--epochs",
         dest="max_epochs",
         type=int,
-        default=10,
         help="number of epochs to train for",
+    )
+
+    # iterations (int)
+    group.add_argument(
+        "--iterations",
+        dest="max_iterations",
+        type=int,
+        help="maximum number of iterations to train for",
     )
 
     # batch_size (int)
@@ -294,6 +338,54 @@ def add_gradient_descent_args(parser: ArgumentParser):
         type=int,
         default=128,
         help="batch size for training",
+    )
+
+    # no_cuda
+    parser.add_argument(
+        "--no_cuda",
+        dest="no_cuda",
+        action="store_true",
+        help="disable CUDA",
+    )
+
+    # val_size
+    parser.add_argument(
+        "--val_size",
+        dest="val_size",
+        type=int,
+        default=5_000,
+        help="validation set size",
+        metavar="COUNT",
+    )
+
+    # log_every
+    parser.add_argument(
+        "--log_every",
+        dest="log_every",
+        type=int,
+        default=None,
+        help="log every n batches",
+        metavar="N",
+    )
+
+    # log_val_every
+    parser.add_argument(
+        "--log_val_every",
+        dest="log_val_every",
+        type=int,
+        default=None,
+        help="log validation every n batches",
+        metavar="N",
+    )
+
+    # log_val_every
+    parser.add_argument(
+        "--log_test_every",
+        dest="log_test_every",
+        type=int,
+        default=None,
+        help="log validation every n batches",
+        metavar="N",
     )
 
     # Add common args
@@ -311,9 +403,6 @@ class TrainArgs(GradientDescentArgs):
 
     csv_path: str
     """Path to csv file to save results to."""
-
-    no_cuda: bool
-    """Disable CUDA."""
 
     def __post_init__(self):
         super().__post_init__()
@@ -348,14 +437,6 @@ def add_train_args(parser: ArgumentParser):
         default="",
         help="path to csv file to save results to",
         metavar="FILE",
-    )
-
-    # no_cuda
-    parser.add_argument(
-        "--no_cuda",
-        dest="no_cuda",
-        action="store_true",
-        help="disable CUDA",
     )
 
     return parser

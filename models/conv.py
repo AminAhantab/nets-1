@@ -1,4 +1,5 @@
 from typing import Tuple
+
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -48,8 +49,7 @@ class ConvTwoNeuralNetwork(MaskedNetwork):
         # Define the sizes of the fully-connected layers
         # from Frankle and Carbin (2019)
         fc_sizes = [256, 256, out_features]
-        post_conv_size = (in_features[0] - 2 * 2, in_features[1] - 2 * 2)
-        fc1_size = conv_sizes[1] * (post_conv_size[0] // 2) * (post_conv_size[1] // 2)
+        fc1_size = conv_sizes[1] * in_features[0] * in_features[1] // 4
 
         # Define the layers
         self.conv1 = MaskedConv2d(*conv_1_channels, 3, padding=1, bias=bias)
@@ -142,11 +142,7 @@ class ConvFourNeuralNetwork(MaskedNetwork):
         # Define the sizes of the fully-connected layers
         # from Frankle and Carbin (2019)
         fc_sizes = [256, 256, out_features]
-        post_conv_size = in_features
-        for _ in range(len(conv_sizes) // 2):
-            post_conv_size = (post_conv_size[0] - 2 * 2, post_conv_size[1] - 2 * 2)
-            post_conv_size = (post_conv_size[0] // 2, post_conv_size[1] // 2)
-        fc1_size = conv_sizes[-1] * post_conv_size[0] * post_conv_size[1]
+        fc1_size = conv_sizes[3] * in_features[0] * in_features[1] // 16
 
         # Define the layers
         self.conv1 = MaskedConv2d(*conv_1_channels, 3, padding=1, bias=bias)
@@ -250,36 +246,21 @@ class ConvSixNeuralNetwork(MaskedNetwork):
         # Define the sizes of the fully-connected layers
         # from Frankle and Carbin (2019)
         fc_sizes = [256, 256, out_features]
-        post_conv_size = in_features
-        for _ in range(len(conv_sizes) // 2):
-            print(post_conv_size)
-            post_conv_size = (post_conv_size[0] - 2 * 2, post_conv_size[1] - 2 * 2)
-            post_conv_size = (post_conv_size[0] // 2, post_conv_size[1] // 2)
-        fc1_size = conv_sizes[-1] * post_conv_size[0] * post_conv_size[1]
-        print(fc1_size)
+        fc1_size = conv_sizes[5] * in_features[0] * in_features[1] // 64
 
         # Define the layers
         self.conv1 = MaskedConv2d(*conv_1_channels, 3, padding=1, bias=bias)
-        print(self.conv1.weight.shape)
         self.conv2 = MaskedConv2d(*conv_2_channels, 3, padding=1, bias=bias)
-        print(self.conv2.weight.shape)
         self.pool1 = nn.MaxPool2d(2, 2, padding=0)
         self.conv3 = MaskedConv2d(*conv_3_channels, 3, padding=1, bias=bias)
-        print(self.conv3.weight.shape)
         self.conv4 = MaskedConv2d(*conv_4_channels, 3, padding=1, bias=bias)
-        print(self.conv4.weight.shape)
         self.pool2 = nn.MaxPool2d(2, 2, padding=0)
         self.conv5 = MaskedConv2d(*conv_5_channels, 3, padding=1, bias=bias)
-        print(self.conv5.weight.shape)
         self.conv6 = MaskedConv2d(*conv_6_channels, 3, padding=1, bias=bias)
-        print(self.conv6.weight.shape)
         self.pool3 = nn.MaxPool2d(2, 2, padding=0)
         self.fc1 = MaskedLinear(fc1_size, fc_sizes[0], bias=bias)
-        print(self.fc1.weight.shape)
         self.fc2 = MaskedLinear(fc_sizes[0], fc_sizes[1], bias=bias)
-        print(self.fc2.weight.shape)
         self.fc3 = MaskedLinear(fc_sizes[1], fc_sizes[2], bias=bias)
-        print(self.fc3.weight.shape)
 
     @property
     def layers(self):
