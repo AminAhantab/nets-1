@@ -14,8 +14,6 @@ def train_model(
     model: MaskedNetwork,
     data: DataLoader,
     opt: Optimizer,
-    epochs: int = None,
-    iterations: int = None,
     device: torch.device = None,
     callbacks: Dict[str, Callable] = None,
 ) -> float:
@@ -32,25 +30,16 @@ def train_model(
     Returns:
         The average loss per epoch.
     """
-    # Determine the number of iterations
-    if epochs is None and iterations is None:
-        epochs = 1
-
-    if iterations is None:
-        iterations = len(data) * epochs
-
     # Set the model to training mode
     model.train()
 
     # Train the model
     current_iteration = 0
-    logger.info(f"Beginning training loop for {epochs} epochs.")
-    logger.debug(f"Training for {iterations} iterations.")
-
     stopping_triggered = False
-    while not stopping_triggered and current_iteration < iterations:
+    while not stopping_triggered:
         epoch = current_iteration // len(data) + 1
-        logger.info(f"Epoch {epoch}/{epochs}...")
+        logger.info(f"Epoch {epoch}...")
+
         for X, y in data:
             # Move data to device
             if device is not None:
@@ -69,11 +58,11 @@ def train_model(
 
             _iteration_callbacks(model, callbacks, current_iteration, epoch, loss.item())
 
-            stopping_triggered = _check_early_stopping(model, callbacks)
+            stopping_triggered = _check_early_stopping(model, callbacks, current_iteration, epoch, loss.item())
             if stopping_triggered:
+                logger.info("Early stopping triggered.")
                 break
 
-            torch.cuda.empty_cache()
         _epoch_callbacks(model, callbacks, current_iteration, epoch, loss.item())
 
     return loss.item()
@@ -107,13 +96,13 @@ def evaluate_model(model: MaskedNetwork, data: DataLoader, device: torch.device 
     return losses.mean().item(), accuracies.mean().item()
 
 
-def _check_early_stopping(model: MaskedNetwork, callbacks: Dict[str, Callable]) -> bool:
+def _check_early_stopping(model: MaskedNetwork, callbacks: Dict[str, Callable], iteration: int, epoch: int, loss: float) -> bool:
     if callbacks is None:
         return False
     
     if "early_stopping" in callbacks:
         for callback in callbacks["early_stopping"]:
-            if callback(model):
+            if callback(model, iteration, epoch, loss):
                 return True
     
     return False

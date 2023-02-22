@@ -223,6 +223,8 @@ class GradientDescentArgs(BaseArgs):
     """Learning rate for training."""
     max_epochs: int
     """Number of epochs to train for."""
+    max_iterations: int
+    """Maximum number of iterations to train for."""
     batch_size: int
     """Batch size for training."""
     no_cuda: bool
@@ -248,8 +250,17 @@ class GradientDescentArgs(BaseArgs):
         if self.learning_rate <= 0:
             errors.append(f"invalid learning rate: {self.learning_rate}")
 
-        if self.max_epochs <= 0:
+        if self.max_iterations is not None and self.max_iterations <= 0:
+            errors.append(f"invalid number of iterations: {self.max_iterations}")
+
+        if self.max_epochs is not None and self.max_epochs <= 0:
             errors.append(f"invalid number of epochs: {self.max_epochs}")
+
+        # One or zero of max_iterations or max_epochs must be specified
+        if self.max_iterations is not None and self.max_epochs is not None:
+            errors.append(
+                "either max_iterations or max_epochs can be specified, not both"
+            )
 
         if self.batch_size <= 0:
             errors.append(f"invalid batch size: {self.batch_size}")
@@ -257,13 +268,13 @@ class GradientDescentArgs(BaseArgs):
         if self.val_size < 0:
             errors.append(f"invalid validation set size: {self.val_size}")
 
-        if self.log_every is not None and self.log_every <= 0:
+        if self.log_every is not None and self.log_every < 0:
             errors.append(f"invalid log_every: {self.log_every}")
 
-        if self.log_val_every is not None and self.log_val_every <= 0:
+        if self.log_val_every is not None and self.log_val_every < 0:
             errors.append(f"invalid log_val_every: {self.log_val_every}")
 
-        if self.log_test_every is not None and self.log_test_every <= 0:
+        if self.log_test_every is not None and self.log_test_every < 0:
             errors.append(f"invalid log_test_every: {self.log_test_every}")
 
         if len(errors) > 0:
@@ -301,13 +312,23 @@ def add_gradient_descent_args(parser: ArgumentParser):
         metavar="LR",
     )
 
+    # epochs and iterations are mutually exclusive
+    group = parser.add_mutually_exclusive_group()
+
     # epochs (int)
-    parser.add_argument(
+    group.add_argument(
         "--epochs",
         dest="max_epochs",
         type=int,
-        default=10,
         help="number of epochs to train for",
+    )
+
+    # iterations (int)
+    group.add_argument(
+        "--iterations",
+        dest="max_iterations",
+        type=int,
+        help="maximum number of iterations to train for",
     )
 
     # batch_size (int)
