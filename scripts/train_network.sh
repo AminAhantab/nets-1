@@ -1,8 +1,8 @@
 #! /bin/bash
 
 
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <seed>"
+if [ $# -ne 5 ]; then
+    echo "Usage: $0 <seed> <arch> <dataset> <opt> <lr>"
     exit 1
 fi
 
@@ -22,24 +22,24 @@ RESULTS_FILENAME="results.csv"
 # Logging Configuration
 LOG_LEVEL=DEBUG
 LOG_EVERY=100
-LOG_VAL_EVERY=0 # 0 means no validation other than end of epoch
+LOG_VAL_EVERY=500 # 0 means no validation other than end of epoch
 LOG_TEST_EVERY=0 # 0 means no testing other than end of epoch
 
 # Experiment Configuration
 SEED=$1
-EPOCHS=1
-# ITERATIONS=10000
+# EPOCHS=10
+ITERATIONS=17500
 VAL_SIZE=5000
 
 # Network Configuration
-ARCH=conv-6
-DATASET=cifar10
+ARCH=$2
+DATASET=$3
 INIT_DENSITY=1.0
-BATCH_SIZE=60
+BATCH_SIZE=64
 
 # Training Configuration
-OPTIMISER=adam
-LR=0.001
+OPTIMISER=$4
+LR=$5
 
 # Make unique output path
 TIMESTAMP=$(date +%s)
@@ -77,6 +77,6 @@ $PYTHON_BIN -m nets_cli train \
     --log_every=$LOG_EVERY \
     --log_val_every=$LOG_VAL_EVERY \
     --log_test_every=$LOG_TEST_EVERY \
-    --epochs $EPOCHS
+    --iterations $ITERATIONS
 
 echo "Training complete. Results saved to $RESULTS_MODEL_PATH"
