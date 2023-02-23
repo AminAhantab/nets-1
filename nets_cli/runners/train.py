@@ -6,7 +6,7 @@ import pandas as pd
 from ..args import TrainArgs
 from ..config import configure_logger, configure_seed, configure_torch
 from ..io import load_model, write_df, write_model
-from ..mapper import hydrate_dataset, hydrate_optimiser
+from ..hydrator import hydrate_dataset, hydrate_optimiser
 
 logger = logging.getLogger("nets_cli.train")
 

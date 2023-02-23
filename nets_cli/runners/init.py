@@ -3,7 +3,7 @@ import logging
 from ..args import InitArgs
 from ..config import configure_logger, configure_seed, configure_torch
 from ..io import write_model
-from ..mapper import hydrate_architecture, hydrate_data_dimensions
+from ..hydrator import hydrate_architecture, hydrate_data_dimensions
 
 logger = logging.getLogger("nets_cli.init")
 

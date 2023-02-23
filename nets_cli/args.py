@@ -5,7 +5,7 @@ import os
 
 SUBCOMMANDS = ["init", "train", "search", "prune"]
 OPTIMISERS = ["sgd", "adam"]
-CRITERIA = ["magnitude", "l1"]
+CRITERIA = ["magnitude", "random"]
 DATASETS = ["mnist", "cifar10"]
 ARCHITECTURES = ["lenet", "conv-2", "conv-4", "conv-6", "resnet-18", "vgg-19"]
 LOG_LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -603,7 +603,7 @@ class PruneArgs(BaseArgs):
 
         one_of = [self.threshold, self.count, self.fraction]
         if len([x for x in one_of if x is not None]) != 1:
-            errors.append(f"must specify exactly one of threshold, prune or fraction")
+            errors.append(f"must specify exactly one of threshold, count or fraction")
 
         if len(errors) > 0:
             raise ValueError("\n".join(errors))
@@ -660,7 +660,6 @@ def add_prune_args(parser: ArgumentParser):
     group.add_argument(
         "--fraction",
         type=float,
-        default=0.1,
         help="fraction of connections to prune",
         metavar="PERC",
     )

@@ -127,3 +127,31 @@ def hydrate_optimiser(optimiser: str) -> Callable[[Any], Any]:
         return SGD
     else:
         raise ValueError(f"Unknown optimiser: {optimiser}")
+
+
+def hydrate_prune_method(
+    criterion: str,
+    threshold: float,
+    count: int,
+    fraction: float,
+) -> Callable:
+    if criterion == "magnitude":
+        from nets.nn.prune import prune_magnitude
+
+        # TODO: Implement other pruning methods
+        if threshold is not None or count is not None or fraction is None:
+            raise NotImplementedError()
+
+        def prune_magnitude_fn(model):
+            return prune_magnitude(model, fraction)
+
+        return prune_magnitude_fn
+    elif criterion == "random":
+        from nets.nn.prune import prune_random
+
+        def prune_random_fn(model):
+            return prune_random(model, count=count, fraction=fraction)
+
+        return prune_random_fn
+    else:
+        raise ValueError(f"Invalid criterion: {criterion}")

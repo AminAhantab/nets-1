@@ -1,9 +1,11 @@
+import argparse
+import json
 import logging
 import os
 
 import pandas as pd
 
-from .mapper import hydrate_class_name
+from .hydrator import hydrate_class_name
 
 logger = logging.getLogger("nets_cli.io")
 
@@ -158,3 +160,22 @@ def create_path(path: str, file_name: str = "model.pt") -> str:
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
     return path
+
+
+def write_params(
+    args: argparse.Namespace,
+    dir: str = "./results",
+    name: str = "params.json",
+):
+    """
+    Write hyperparameters to file.
+
+    Args:
+        args (argparse.Namespace): Namespace of hyperparameters.
+        dir (str): Directory to write to.
+        name (str): Name of file to write to.
+    """
+    os.makedirs(dir, exist_ok=True)
+    path = f"{dir}/{name}"
+    with open(path, "w") as f:
+        json.dump(args.__dict__, f, indent=2)
