@@ -47,7 +47,6 @@ def main():
         prune_args = PruneArgs(**vars(args))
         runners.run_prune(prune_args)
     elif subcommand == "imp":
-        print(vars(args))
         imp_args = IterativeMagnitudePruningArgs(**vars(args))
         runners.run_imp(imp_args)
     else:

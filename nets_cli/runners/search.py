@@ -14,6 +14,7 @@ def run_search(args: SearchArgs) -> None:
     device = configure_torch(args.no_cuda)
     configure_seed(args.seed)
 
+    from torch.utils.data import DataLoader
     import nets.callbacks as cb
 
     # Get relevant arguments
@@ -40,11 +41,14 @@ def run_search(args: SearchArgs) -> None:
     # Initialise data
     train_data, val_data, test_data = hydrate_dataset(dataset, val_size=val_size)
 
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
+
     # Create callbacks
-    test_df = pd.DataFrame()
+    test_df = pd.DataFrame(
+        columns=["generation", "chromosome", "test_loss", "test_acc"]
+    )
     callbacks = [
-        cb.test_callback(test_df, train_data, test_data, epochs=1),
-        cb.log_callback(),
+        cb.nets_log_test_loss(test_df, test_loader, every=1, device=device),
     ]
 
     # Initialise the model
@@ -73,6 +77,7 @@ def run_search(args: SearchArgs) -> None:
         max_generations=max_generations,
         min_fitness=min_fitness,
         callbacks=callbacks,
+        device=device,
     )
 
     # Return results as dataframe

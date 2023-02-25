@@ -42,8 +42,6 @@ def run_imp(args: IterativeMagnitudePruningArgs) -> None:
     for layer in model.layers:
         initial_weights.append(layer.weight.data.clone())
 
-    print("SUM OF WEIGHTS: ", sum([w.sum() for w in initial_weights]))
-
     # Move model to device
     model.to(device)
 
@@ -87,7 +85,6 @@ def run_imp(args: IterativeMagnitudePruningArgs) -> None:
         # Reinitialise weights
         if reinit:
             reinitialise_weights(model, initial_weights, device)
-            print("SUM OF WEIGHTS", sum([l.weight.sum() for l in model.layers]))
 
     # Save model and results
     out_path = os.path.join(args.out_path, f"trained-{cycles}.pt")
@@ -190,8 +187,8 @@ def init_callbacks(
     ]
 
     early_stopping_criteria = [
-        cb.max_epochs(df, max_epochs),
-        cb.max_iterations(df, max_iterations),
+        cb.max_epochs(max_epochs),
+        cb.max_iterations(max_iterations),
     ]
 
     if device == "cuda":

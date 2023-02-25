@@ -5,7 +5,6 @@ from typing import Callable, Dict, Iterator
 import torch
 from torch import nn, Tensor
 from torch.utils.data import DataLoader
-from torch.optim import SGD
 
 from .nn import MaskedNetwork, MaskedLinear, train_model, evaluate_model
 from .utils import uniform_mask
@@ -20,13 +19,14 @@ MASK_INDEX = 1
 FitnessFn = Callable[[Tensor], Dict[str, Tensor]]
 
 
-def init_population(genome_size: int, pop_size: int, density: float = 1.0) -> Tensor:
+def init_population(num_params: int, pop_size: int, density: float = 1.0) -> Tensor:
     """
     Initialise a population of individuals with random weights.
 
     Args:
-        model: The model to initialise the population for.
+        num_params: The number of parameters in the model.
         pop_size: The size of the population.
+        density: The density of the network.
 
     Returns:
         A tensor of shape (pop_size, 2, num_parameters) containing the
@@ -34,14 +34,19 @@ def init_population(genome_size: int, pop_size: int, density: float = 1.0) -> Te
     """
     assert pop_size > 0
     logger.info("Initialising population of size %d...", pop_size)
-    population = torch.zeros((pop_size, 2, genome_size))
+    population = torch.zeros((pop_size, 2, num_params))
     nn.init.kaiming_uniform_(population[:, 0, :], a=math.sqrt(5))
-    population[:, 1, :] = uniform_mask(genome_size, density)
+    population[:, 1, :] = uniform_mask((num_params,), density)
 
     return population
 
 
-def load_weights(model: MaskedNetwork, individual: Tensor, requires_grad: bool = False):
+def load_weights(
+    model: MaskedNetwork,
+    individual: Tensor,
+    requires_grad: bool = False,
+    device: torch.device = None,
+):
     """
     Load weights from a single individual into a model.
 
@@ -49,6 +54,7 @@ def load_weights(model: MaskedNetwork, individual: Tensor, requires_grad: bool =
         model: The model to load the weights into.
         individual: The individual to load the weights from.
         requires_grad: Whether the weights should be trainable.
+        device: The device to move the weights to.
 
     Returns:
         None
@@ -63,6 +69,7 @@ def load_weights(model: MaskedNetwork, individual: Tensor, requires_grad: bool =
 
         layer.weight = nn.Parameter(weight_vals, requires_grad=requires_grad)
         layer.mask = nn.Parameter(mask_vals, requires_grad=False)
+        layer.to(device)
         individual = individual[:, num_weights:]
 
 
@@ -99,10 +106,12 @@ def select_parents(fitness: Tensor, num_parents: int) -> Tensor:
 
 def nets_fitness(
     model: MaskedNetwork,
-    train_data: DataLoader,
-    val_data: DataLoader,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
     init_opt: Callable[[Iterator[nn.Parameter]], torch.optim.Optimizer],
     target: float = 0.2,
+    train_callbacks: Dict[str, list] = None,
+    device: torch.device = None,
 ) -> FitnessFn:
     """
     Create a fitness function for the Nets algorithm.
@@ -134,14 +143,14 @@ def nets_fitness(
             logger.debug(f"Training chromosome {i}...")
 
             # Load the weights into the model
-            load_weights(model, individual, requires_grad=True)
+            load_weights(model, individual, requires_grad=True, device=device)
 
             # Train the model
             opt = init_opt(model.parameters())
-            train_loss = train_model(model, train_data, opt, epochs=1)
+            train_loss = train_model(model, train_loader, opt, device, train_callbacks)
 
             # Evaluate the model
-            val_loss, val_acc = evaluate_model(model, val_data)
+            val_loss, val_acc = evaluate_model(model, val_loader, device)
             density = model.density()
             penalty = ((density - target) / (1 - target)) ** 2
 

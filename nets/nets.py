@@ -9,7 +9,7 @@ from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
 from .nn import MaskedNetwork
-from . import genetic
+from . import genetic, callbacks as cb
 
 logger = logging.getLogger("evolth")
 
@@ -38,6 +38,7 @@ def neuroevolution_ts(
     min_fitness: float = None,
     min_val_loss: float = None,
     callbacks: List[Callback] = None,
+    device: Union[str, torch.device] = "cpu",
 ):
     """
     Run Neuroevolution Ticket Search (NeTS) to find a winning network
@@ -84,11 +85,23 @@ def neuroevolution_ts(
 
     # Initialise data loaders
     train_loader = DataLoader(data, batch_size=batch_size, shuffle=shuffle)
-    val_loader = DataLoader(val_data, batch_size=None)
+    val_loader = DataLoader(val_data, batch_size=batch_size)
+
+    # Initialise training callbacks
+    train_callbacks = {
+        "iteration": [cb.log_train_loss(None, every=100)],
+        "early_stopping": [cb.max_epochs(1)],
+    }
 
     # Initialise fitness function
     fitness_fn = genetic.nets_fitness(
-        model, train_loader, val_loader, init_opt, target_density
+        model,
+        train_loader,
+        val_loader,
+        init_opt,
+        target_density,
+        train_callbacks,
+        device,
     )
 
     # Initialise results

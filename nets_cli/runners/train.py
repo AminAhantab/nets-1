@@ -104,8 +104,8 @@ def init_callbacks(
     ]
 
     early_stopping_criteria = [
-        cb.max_epochs(df, max_epochs),
-        cb.max_iterations(df, max_iterations),
+        cb.max_epochs(max_epochs),
+        cb.max_iterations(max_iterations),
     ]
 
     if device == "cuda":

@@ -36,8 +36,9 @@ def log_train_loss(df: pd.DataFrame, every: int = 100) -> None:
             return
 
         logger.debug(f"Iteration {iteration} (Epoch {epoch}) — train loss: {loss:.4f}")
-        df.loc[iteration, "train_loss"] = loss
-        df.loc[iteration, "epoch"] = epoch
+        if df is not None:
+            df.loc[iteration, "train_loss"] = loss
+            df.loc[iteration, "epoch"] = epoch
 
     return _cb
 
@@ -182,7 +183,7 @@ def log_gpu_memory(every: int = None):
     return _cb
 
 
-def max_epochs(df: pd.DataFrame, max_epochs: int):
+def max_epochs(max_epochs: int):
     """
     Returns a callback that stops gradient descent after a certain number of epochs.
 
@@ -217,12 +218,11 @@ def max_epochs(df: pd.DataFrame, max_epochs: int):
     return _cb
 
 
-def max_iterations(df: pd.DataFrame, max_iterations: int):
+def max_iterations(max_iterations: int):
     """
     Returns a callback that stops gradient descent after a certain number of iterations.
 
     Args:
-        df: The dataframe to log to.
         max_iterations: The maximum number of iterations to train for.
 
     Returns:
@@ -249,12 +249,11 @@ def max_iterations(df: pd.DataFrame, max_iterations: int):
     return _cb
 
 
-def max_seconds(df: pd.DataFrame, max_seconds: int):
+def max_seconds(max_seconds: int):
     """
     Returns a callback that stops gradient descent after a certain number of seconds.
 
     Args:
-        df: The dataframe to log to.
         max_seconds: The maximum number of seconds to train for.
 
     Returns:
@@ -340,6 +339,7 @@ def nets_log_test_loss(
     from torch.utils.data import DataLoader
     from nets import MaskedNetwork
     from nets.nn import evaluate_model
+    from nets.genetic import load_weights
 
     assert isinstance(test_loader, DataLoader)
     assert every is None or every >= 0
@@ -362,5 +362,11 @@ def nets_log_test_loss(
             _loss: The current training loss."""
         if every is None or generation % every != 0:
             return
+
+        for i in range(population.shape[0]):
+            load_weights(model, population[i, :, :], requires_grad=False, device=device)
+            loss, acc = evaluate_model(model, test_loader, device=device)
+            df.loc[len(df)] = [generation, i, loss, acc]
+            logger.info("Test loss: %f", loss)
 
     return _cb
