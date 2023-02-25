@@ -12,7 +12,7 @@ def run(trial: int):
     device = configure_torch()
     configure_seed(42 + trial)
 
-    output_path = "results/nets_experiments"
+    output_path = "/scratch/users/k1502897/nets_2/results/nets_experiments"
     os.makedirs(output_path, exist_ok=True)
 
     # Oneshot magnitude pruning====
@@ -26,7 +26,7 @@ def run(trial: int):
         optimiser="adam",
         learning_rate=1.2e-3,
         batch_size=60,
-        max_iterations=5_000,
+        max_iterations=50_000,
         max_epochs=None,
         log_every=100,
         log_val_every=500,
@@ -54,7 +54,7 @@ def run(trial: int):
         optimiser="adam",
         learning_rate=1.2e-3,
         batch_size=60,
-        max_iterations=5_000,
+        max_iterations=50_000,
         max_epochs=None,
         log_every=100,
         log_val_every=500,
@@ -79,7 +79,7 @@ def run(trial: int):
         optimiser="adam",
         learning_rate=1.2e-3,
         batch_size=60,
-        pop_size=5,
+        pop_size=10,
         initial_density=0.6,
         target_density=0.3,
         elitism=2,
@@ -103,7 +103,7 @@ def run(trial: int):
         optimiser="adam",
         learning_rate=1.2e-3,
         batch_size=60,
-        max_iterations=5_000,
+        max_iterations=50_000,
         max_epochs=None,
         log_every=100,
         log_val_every=500,

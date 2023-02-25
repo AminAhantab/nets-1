@@ -232,6 +232,7 @@ def search(
         init_density=initial_density,
         target_density=target_density,
         elitism=elitism,
+        shuffle=False,
         p_crossover=p_crossover,
         mr_weight_noise=mr_noise,
         mr_weight_rand=mr_random,
