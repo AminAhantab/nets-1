@@ -1,4 +1,9 @@
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Tuple, Union
+
+from torch.utils.data import Dataset
+
+from nets.nn import MaskedNetwork, prune_magnitude, prune_random
+from nets.utils import set_uniform_masks
 
 
 def hydrate_new_model(
@@ -6,9 +11,19 @@ def hydrate_new_model(
     dataset: str,
     density: float = 1.0,
     bias: bool = True,
-) -> Any:
-    from nets.utils import set_uniform_masks
+) -> MaskedNetwork:
+    """
+    Hydrates a new model.
 
+    Args:
+        architecture: The name of the architecture.
+        dataset: The name of the dataset.
+        density: The density of the model.
+        bias: Whether to include bias terms.
+
+    Returns:
+        The initialised model.
+    """
     constructor = hydrate_architecture(architecture)
     dimensions = hydrate_data_dimensions(dataset)
     model = constructor(*dimensions, bias=bias)
@@ -16,7 +31,7 @@ def hydrate_new_model(
     return model
 
 
-def hydrate_architecture(architecture: str) -> Callable[[int, int, int], Any]:
+def hydrate_architecture(architecture: str) -> Callable[[int, int, int], MaskedNetwork]:
     """
     Hydrates an architecture name into a class.
 
@@ -46,7 +61,7 @@ def hydrate_architecture(architecture: str) -> Callable[[int, int, int], Any]:
         raise ValueError(f"Unknown architecture: {architecture}")
 
 
-def hydrate_class_name(class_name: str) -> Callable[[int, int, int], Any]:
+def hydrate_class_name(class_name: str) -> Callable[[int, int, int], MaskedNetwork]:
     """
     Hydrates a class name into a class.
 
@@ -82,7 +97,7 @@ def hydrate_dataset(
     download: bool = True,
     val_size: int = 5_000,
     generator=None,
-) -> Tuple[Any, Any, Any]:
+) -> Union[Tuple[Dataset, Dataset], Tuple[Dataset, Dataset, Dataset]]:
     """
     Hydrates a dataset name into the corresponding datasets.
 
@@ -151,8 +166,6 @@ def hydrate_prune_method(
     fraction: float,
 ) -> Callable:
     if criterion == "magnitude":
-        from nets.nn.prune import prune_magnitude
-
         # TODO: Implement other pruning methods
         if threshold is not None or count is not None or fraction is None:
             raise NotImplementedError()
@@ -162,7 +175,6 @@ def hydrate_prune_method(
 
         return prune_magnitude_fn
     elif criterion == "random":
-        from nets.nn.prune import prune_random
 
         def prune_random_fn(model):
             return prune_random(model, count=count, fraction=fraction)

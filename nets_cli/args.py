@@ -167,6 +167,8 @@ class InitArgs(BaseArgs):
     """Architecture to use for the model."""
     density: float
     """Density of the model."""
+    bias: bool
+    """Whether to use bias in the model."""
 
     def __post_init__(self):
         errors = []
@@ -211,6 +213,14 @@ def add_init_args(parser: ArgumentParser):
         default=1,
         help="density of the initial network",
         metavar="D",
+    )
+
+    # bias (bool)
+    parser.add_argument(
+        "--bias",
+        action="store_true",
+        help="whether to use bias in the model",
+        default=False,
     )
 
     # Add common args
