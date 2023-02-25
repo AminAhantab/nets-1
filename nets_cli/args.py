@@ -55,6 +55,15 @@ def add_arguments(parser: ArgumentParser) -> ArgumentParser:
     # add prune arguments
     prune_parser = add_prune_args(prune_parser)
 
+    # imp subcommand
+    imp_parser = subparsers.add_parser(
+        "imp",
+        help="iterative magnitude pruning",
+    )
+
+    # add imp arguments
+    imp_parser = add_iterative_magnitude_pruning_args(imp_parser)
+
     return parser
 
 
@@ -446,6 +455,13 @@ def add_train_args(parser: ArgumentParser):
 class SearchArgs(GradientDescentArgs):
     """Arguments for searching for an initialisation."""
 
+    arch: str
+    """Architecture to search for."""
+    initial_density: float
+    """Initial density of connections."""
+    target_density: float
+    """Target density of connections."""
+
     population_size: int
     """Number of individuals in the population."""
     max_generations: int
@@ -462,13 +478,30 @@ class SearchArgs(GradientDescentArgs):
 
     p_crossover: float
     """Probability of fittest parent genes transferred during crossover."""
+    num_elites: int
+    """Number of fittest individuals to keep in the population."""
+
+    min_fitness: float
+    """Minimum fitness to stop searching at."""
+
+    csv_path: str
+    """Path to csv file to save results to."""
 
     def __post_init__(self):
         errors = []
+        if self.arch not in ARCHITECTURES:
+            errors.append(f"invalid architecture: {self.arch}")
+
+        if self.initial_density <= 0 or self.initial_density > 1:
+            errors.append(f"invalid initial density: {self.initial_density}")
+
+        if self.target_density <= 0 or self.target_density > 1:
+            errors.append(f"invalid target density: {self.target_density}")
+
         if self.population_size <= 0:
             errors.append(f"invalid population size: {self.population_size}")
 
-        if self.max_generations <= 0:
+        if self.max_generations is not None and self.max_generations <= 0:
             errors.append(f"invalid number of generations: {self.max_generations}")
 
         if self.mr_disable < 0 or self.mr_disable > 1:
@@ -486,11 +519,44 @@ class SearchArgs(GradientDescentArgs):
         if self.p_crossover < 0 or self.p_crossover > 1:
             errors.append(f"invalid crossover probability: {self.p_crossover}")
 
+        if self.num_elites < 0:
+            errors.append(f"invalid number of elites: {self.num_elites}")
+
         if len(errors) > 0:
             raise ValueError("\n".join(errors))
 
 
 def add_search_args(parser: ArgumentParser):
+    # arch (str)
+    parser.add_argument(
+        "--arch",
+        dest="arch",
+        type=str,
+        required=True,
+        help="architecture to search for",
+        metavar="ARCH",
+    )
+
+    # initial_density (float)
+    parser.add_argument(
+        "--init_density",
+        dest="initial_density",
+        type=float,
+        default=0.5,
+        help="initial density of connections",
+        metavar="DENSITY",
+    )
+
+    # target_density (float)
+    parser.add_argument(
+        "--target_density",
+        dest="target_density",
+        type=float,
+        default=0.2,
+        help="target density of connections",
+        metavar="DENSITY",
+    )
+
     # population_size
     parser.add_argument(
         "--pop",
@@ -506,7 +572,6 @@ def add_search_args(parser: ArgumentParser):
         "--gens",
         dest="max_generations",
         type=int,
-        default=100,
         help="number of generations to search for",
         metavar="GEN",
     )
@@ -554,6 +619,33 @@ def add_search_args(parser: ArgumentParser):
         default=0.5,
         help="probability genes from fitter parent are passed to offspring",
         metavar="PROB",
+    )
+
+    # num_elites (int)
+    parser.add_argument(
+        "--elites",
+        dest="num_elites",
+        type=int,
+        default=1,
+        help="number of fittest individuals to keep in the population",
+        metavar="ELITES",
+    )
+
+    # min_fitness (float)
+    parser.add_argument(
+        "--min_fitness",
+        type=float,
+        help="minimum fitness to stop searching at",
+        metavar="FITNESS",
+    )
+
+    # csv_path (str)
+    parser.add_argument(
+        "--csv_path",
+        dest="csv_path",
+        type=str,
+        help="path to csv file to save results to",
+        metavar="CSV",
     )
 
     # Add training args
@@ -666,5 +758,112 @@ def add_prune_args(parser: ArgumentParser):
 
     # Add common args
     parser = add_common_args(parser)
+
+    return parser
+
+
+@dataclass
+class IterativeMagnitudePruningArgs(TrainArgs):
+    """Arguments for iterative magnitude pruning."""
+
+    criterion: str
+    """Pruning criterion."""
+
+    threshold: float
+    """Pruning threshold."""
+    count: int
+    """Number of connections to prune."""
+    fraction: float
+    """Fraction of connections to prune."""
+
+    cycles: int
+    """Number of pruning cycles to perform."""
+
+    reinit: bool
+    """Whether to reinitialize weights after pruning."""
+
+    def __post_init__(self):
+        super().__post_init__()
+        errors = []
+
+        if self.criterion not in CRITERIA:
+            errors.append(f"invalid pruning criterion: {self.criterion}")
+
+        if self.threshold is not None and self.threshold <= 0:
+            errors.append(f"invalid pruning threshold: {self.threshold}")
+
+        if self.count is not None and self.count <= 0:
+            errors.append(f"invalid number of connections to prune: {self.count}")
+
+        if self.fraction is not None and self.fraction <= 0:
+            errors.append(f"invalid fraction of connections to prune: {self.fraction}")
+
+        one_of = [self.threshold, self.count, self.fraction]
+        if len([x for x in one_of if x is not None]) != 1:
+            errors.append(f"must specify exactly one of threshold, count or fraction")
+
+        if self.cycles <= 0:
+            errors.append(f"invalid number of pruning cycles: {self.cycles}")
+
+        if len(errors) > 0:
+            raise ValueError("\n".join(errors))
+
+
+def add_iterative_magnitude_pruning_args(parser: ArgumentParser):
+    # Add training args
+    parser = add_train_args(parser)
+
+    # Add pruning args
+    # criterion (enum: magnitude, l1)
+    parser.add_argument(
+        "--criterion",
+        type=str,
+        default="magnitude",
+        help="pruning criterion",
+        choices=CRITERIA,
+    )
+
+    group = parser.add_mutually_exclusive_group()
+
+    # threshold (float)
+    group.add_argument(
+        "--threshold",
+        type=float,
+        help="pruning threshold",
+        metavar="T",
+    )
+
+    # prune (int)
+    group.add_argument(
+        "--count",
+        type=int,
+        help="number of connections to prune",
+        metavar="N",
+    )
+
+    # fraction (float)
+    group.add_argument(
+        "--fraction",
+        type=float,
+        help="fraction of connections to prune",
+        metavar="PERC",
+    )
+
+    # cycles (int)
+    parser.add_argument(
+        "--cycles",
+        type=int,
+        default=1,
+        help="number of pruning cycles to perform",
+        metavar="CYCLES",
+    )
+
+    # reinit (bool)
+    parser.add_argument(
+        "--reinit",
+        action="store_true",
+        default=True,
+        help="whether to reinitialize weights after pruning",
+    )
 
     return parser

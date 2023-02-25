@@ -1,6 +1,6 @@
 import math
 import logging
-from typing import Callable, Dict
+from typing import Callable, Dict, Iterator
 
 import torch
 from torch import nn, Tensor
@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from torch.optim import SGD
 
 from .nn import MaskedNetwork, MaskedLinear, train_model, evaluate_model
+from .utils import uniform_mask
 
 
 logger = logging.getLogger("nets")
@@ -19,7 +20,7 @@ MASK_INDEX = 1
 FitnessFn = Callable[[Tensor], Dict[str, Tensor]]
 
 
-def init_population(model: MaskedNetwork, pop_size: int) -> Tensor:
+def init_population(genome_size: int, pop_size: int, density: float = 1.0) -> Tensor:
     """
     Initialise a population of individuals with random weights.
 
@@ -33,9 +34,10 @@ def init_population(model: MaskedNetwork, pop_size: int) -> Tensor:
     """
     assert pop_size > 0
     logger.info("Initialising population of size %d...", pop_size)
-    population = torch.zeros((pop_size, 2, model.num_parameters()))
+    population = torch.zeros((pop_size, 2, genome_size))
     nn.init.kaiming_uniform_(population[:, 0, :], a=math.sqrt(5))
-    nn.init.ones_(population[:, 1, :])
+    population[:, 1, :] = uniform_mask(genome_size, density)
+
     return population
 
 
@@ -99,6 +101,7 @@ def nets_fitness(
     model: MaskedNetwork,
     train_data: DataLoader,
     val_data: DataLoader,
+    init_opt: Callable[[Iterator[nn.Parameter]], torch.optim.Optimizer],
     target: float = 0.2,
 ) -> FitnessFn:
     """
@@ -134,7 +137,7 @@ def nets_fitness(
             load_weights(model, individual, requires_grad=True)
 
             # Train the model
-            opt = SGD(model.parameters(), lr=0.001)
+            opt = init_opt(model.parameters())
             train_loss = train_model(model, train_data, opt, epochs=1)
 
             # Evaluate the model

@@ -1,6 +1,21 @@
 from typing import Any, Callable, Tuple
 
 
+def hydrate_new_model(
+    architecture: str,
+    dataset: str,
+    density: float = 1.0,
+    bias: bool = True,
+) -> Any:
+    from nets.utils import set_uniform_masks
+
+    constructor = hydrate_architecture(architecture)
+    dimensions = hydrate_data_dimensions(dataset)
+    model = constructor(*dimensions, bias=bias)
+    set_uniform_masks(model, density)
+    return model
+
+
 def hydrate_architecture(architecture: str) -> Callable[[int, int, int], Any]:
     """
     Hydrates an architecture name into a class.

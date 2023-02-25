@@ -31,6 +31,7 @@ def prune_magnitude(model: MaskedNetwork, fraction: float) -> int:
         initial_weights = layer.mask.sum()
         new_mask = prune_magnitude_rate(layer.weight, layer.mask, fraction)
         removed_weights += initial_weights - new_mask.sum()
+        layer.mask = torch.nn.Parameter(new_mask, requires_grad=False)
 
     return removed_weights
 
