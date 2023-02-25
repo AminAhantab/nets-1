@@ -1,6 +1,7 @@
 from typing import Any, Callable, Tuple, Union
 
 from torch.utils.data import Dataset
+from torch.optim import Optimizer
 
 from nets.nn import MaskedNetwork, prune_magnitude, prune_random
 from nets.utils import set_uniform_masks
@@ -137,7 +138,7 @@ def hydrate_data_dimensions(dataset: str) -> Tuple[int, Tuple[int, int], int]:
         raise ValueError(f"Unknown dataset: {dataset}")
 
 
-def hydrate_optimiser(optimiser: str) -> Callable[[Any], Any]:
+def hydrate_optimiser(optimiser: str) -> Callable[[Any], Optimizer]:
     """
     Hydrates an optimiser name into the corresponding optimiser.
 

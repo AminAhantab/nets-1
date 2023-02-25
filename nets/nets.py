@@ -152,7 +152,7 @@ def neuroevolution_ts(
         )
 
     # Load best solution into model before returning
-    genetic.load_weights(model, solution[0], requires_grad=True)
+    genetic.load_weights(model, solution[0], device)
     logger.info("Best individual: %s", solution[1])
 
     # Return results

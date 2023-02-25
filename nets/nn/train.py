@@ -1,4 +1,3 @@
-import itertools
 import logging
 from typing import Callable, Dict
 
@@ -64,6 +63,7 @@ def train_model(
             # Forward and backward pass
             logits = model(X)
             loss = model.loss(logits, y)
+            print(loss)
             loss.backward()
             opt.step()
             opt.zero_grad()

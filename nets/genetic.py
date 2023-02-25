@@ -44,7 +44,6 @@ def init_population(num_params: int, pop_size: int, density: float = 1.0) -> Ten
 def load_weights(
     model: MaskedNetwork,
     individual: Tensor,
-    requires_grad: bool = False,
     device: torch.device = None,
 ):
     """
@@ -53,7 +52,6 @@ def load_weights(
     Args:
         model: The model to load the weights into.
         individual: The individual to load the weights from.
-        requires_grad: Whether the weights should be trainable.
         device: The device to move the weights to.
 
     Returns:
@@ -67,7 +65,7 @@ def load_weights(
         weight_vals = individual[0, :num_weights].reshape(layer.weight.shape).clone()
         mask_vals = individual[1, :num_weights].reshape(layer.mask.shape).clone()
 
-        layer.weight = nn.Parameter(weight_vals, requires_grad=requires_grad)
+        layer.weight = nn.Parameter(weight_vals, requires_grad=True)
         layer.mask = nn.Parameter(mask_vals, requires_grad=False)
         layer.to(device)
         individual = individual[:, num_weights:]
@@ -143,7 +141,7 @@ def nets_fitness(
             logger.debug(f"Training chromosome {i}...")
 
             # Load the weights into the model
-            load_weights(model, individual, requires_grad=True, device=device)
+            load_weights(model, individual, device=device)
 
             # Train the model
             opt = init_opt(model.parameters())

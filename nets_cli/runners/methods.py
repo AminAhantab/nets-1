@@ -132,7 +132,7 @@ def iterative_magnitude_prune(
     # Store intiial weights
     initial_weights = []
     for layer in model.layers:
-        initial_weights.append(layer.weight.data.clone())
+        initial_weights.append(layer.state_dict["weight"].clone())
 
     # Move model to device
     model.to(device)
