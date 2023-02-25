@@ -364,7 +364,7 @@ def nets_log_test_loss(
             return
 
         for i in range(population.shape[0]):
-            load_weights(model, population[i, :, :], requires_grad=False, device=device)
+            load_weights(model, population[i, :, :], requires_grad=True, device=device)
             loss, acc = evaluate_model(model, test_loader, device=device)
             df.loc[len(df)] = [generation, i, loss, acc]
             logger.info("Test loss: %f", loss)

@@ -82,5 +82,5 @@ def run_search(args: SearchArgs) -> None:
 
     # Return results as dataframe
     merged_df = pd.merge(results, test_df, on=["generation", "chromosome"])
-    write_model(model, args.out_dir, "model.pt", overwrite=True)
-    write_df(merged_df, args.results_dir, "results.csv")
+    write_model(model, args.out_path, "model.pt", overwrite=True)
+    write_df(merged_df, args.csv_path, "results.csv")

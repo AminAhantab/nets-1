@@ -91,10 +91,6 @@ def evaluate_model(model: MaskedNetwork, data: DataLoader, device: torch.device 
     with torch.no_grad():
         model.eval()
 
-        for layer in model.layers:
-            print(layer.weight.device)
-            print(layer.mask.device)
-
         losses = torch.empty(len(data))
         accuracies = torch.empty(len(data))
         for i, (X, y) in enumerate(data):
