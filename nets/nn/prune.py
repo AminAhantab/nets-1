@@ -3,6 +3,71 @@ Pruning methods.
 """
 
 from torch import Tensor
+import torch
+from nets.nn.layers import MaskedLayer
+
+from nets.nn.masked import MaskedNetwork
+
+
+def prune_magnitude(model: MaskedNetwork, fraction: float) -> int:
+    """
+    Prune the weights using the magnitude pruning method.
+
+    Parameters
+    ----------
+    model : MaskedNetwork
+        The model to prune.
+    threshold : float
+        The weight threshold τ at which to prune.
+
+    Returns
+    -------
+    MaskedNetwork
+        The pruned model.
+    """
+    removed_weights = 0
+    for layer in model.layers:
+        assert isinstance(layer, MaskedLayer)
+        initial_weights = layer.mask.sum()
+        new_mask = prune_magnitude_rate(layer.weight, layer.mask, fraction)
+        removed_weights += initial_weights - new_mask.sum()
+        layer.mask = torch.nn.Parameter(new_mask, requires_grad=False)
+
+    return removed_weights
+
+
+def prune_random(
+    model: MaskedNetwork,
+    count: int = None,
+    fraction: float = None,
+) -> MaskedNetwork:
+    """
+    Prune the weights using the random pruning method.
+
+    Parameters
+    ----------
+    model : MaskedNetwork
+        The model to prune.
+    count : int, optional
+        The number of weights to prune, by default None
+    fraction : float, optional
+        The fraction of weights to prune, by default None
+
+    Returns
+    -------
+    MaskedNetwork
+        The pruned model.
+    """
+    assert count is not None or fraction is not None
+
+    removed_weights = 0
+    for layer in model.layers:
+        assert isinstance(layer, MaskedLayer)
+        initial_weights = layer.mask.sum()
+        new_mask = prune_random_rate(layer.weight, layer.mask, fraction)
+        removed_weights += initial_weights - new_mask.sum()
+
+    return removed_weights
 
 
 def prune_threshold(weights: Tensor, p=0.2) -> float:
@@ -40,7 +105,7 @@ def prune_threshold(weights: Tensor, p=0.2) -> float:
     return s[x].item()
 
 
-def prune_oneshot(weights: Tensor, mask: Tensor, p=0.2) -> Tensor:
+def prune_magnitude_rate(weights: Tensor, mask: Tensor, p=0.2) -> Tensor:
     """
     Prune the weights using the one-shot pruning method.
 
@@ -78,3 +143,44 @@ def prune_oneshot(weights: Tensor, mask: Tensor, p=0.2) -> Tensor:
 
     # Return the pruning mask
     return mask
+
+def prune_random_rate(weights: Tensor, mask: Tensor, p=0.2) -> Tensor:
+    """
+    Prune the weights using the random pruning method.
+
+    Parameters
+    ----------
+    weights : Tensor
+        The weights to prune.
+    mask : Tensor
+        The pruning mask.
+    p : float, optional
+        The percentile of weights to prune, by default 0.2
+
+    Returns
+    -------
+    Tensor
+        The updated pruning mask.
+    """
+    if weights is None or mask is None:
+        return None
+
+    if weights.shape != mask.shape:
+        raise ValueError("weights and mask must have the same shape")
+
+    if weights.device != mask.device:
+        raise ValueError("weights and mask must be on the same device")
+
+    # Number of non-zero weights
+    count = int(p * mask.sum())
+
+    # Zero out `count` number of non-zero mask values
+    mask = mask.flatten()
+    indices = torch.randperm(mask.sum())[:count]
+    mask[indices] = 0
+    mask = mask.reshape(weights.shape)
+
+
+    # Return the pruning mask
+    return mask
+    

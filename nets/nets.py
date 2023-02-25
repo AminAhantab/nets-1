@@ -9,19 +9,25 @@ from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
 from .nn import MaskedNetwork
-from . import genetic
+from . import genetic, callbacks as cb
 
 logger = logging.getLogger("evolth")
 
 Callback = Callable[[MaskedNetwork, Tensor, Dict[str, Tensor], int], Any]
+
+default_optimiser = lambda params: torch.optim.Adam(params, lr=0.001)
 
 
 def neuroevolution_ts(
     model: MaskedNetwork,
     data: Dataset,
     val_data: Dataset,
+    shuffle: bool = True,
+    init_opt: Callable[[Any], torch.optim.Optimizer] = default_optimiser,
     batch_size: int = 64,
     pop_size: int = 10,
+    init_density: float = 0.1,
+    target_density: float = 0.2,
     elitism: int = 3,
     p_crossover: float = 0.5,
     mr_weight_noise: float = 0.1,
@@ -32,6 +38,7 @@ def neuroevolution_ts(
     min_fitness: float = None,
     min_val_loss: float = None,
     callbacks: List[Callback] = None,
+    device: Union[str, torch.device] = "cpu",
 ):
     """
     Run Neuroevolution Ticket Search (NeTS) to find a winning network
@@ -41,8 +48,11 @@ def neuroevolution_ts(
         model: The prototype model to use for gradient descent.
         data: The training data.
         val_data: The validation data.
+        optimiser: The optimiser to use for gradient descent.
+        learning_rate: The learning rate to use for gradient descent.
         batch_size: The batch size to use for stochastic gradient descent.
         pop_size: The size of the population.
+        init_density: The initial density of the network.
         elitism: The number of individuals to keep in the population.
         p_crossover: The probability of crossover.
         mr_weight_noise: The probability of mutating a weight by adding noise.
@@ -71,14 +81,28 @@ def neuroevolution_ts(
     assert max_generations >= 0
 
     # Initialise population
-    population = genetic.init_population(model, pop_size)
+    population = genetic.init_population(model.num_parameters(), pop_size, init_density)
 
     # Initialise data loaders
-    train_loader = DataLoader(data, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_data, batch_size=None)
+    train_loader = DataLoader(data, batch_size=batch_size, shuffle=shuffle)
+    val_loader = DataLoader(val_data, batch_size=batch_size)
+
+    # Initialise training callbacks
+    train_callbacks = {
+        "iteration": [cb.log_train_loss(None, every=100)],
+        "early_stopping": [cb.max_epochs(1)],
+    }
 
     # Initialise fitness function
-    fitness_fn = genetic.nets_fitness(model, train_loader, val_loader)
+    fitness_fn = genetic.nets_fitness(
+        model,
+        train_loader,
+        val_loader,
+        init_opt,
+        target_density,
+        train_callbacks,
+        device,
+    )
 
     # Initialise results
     solution = None

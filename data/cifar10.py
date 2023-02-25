@@ -13,7 +13,7 @@ TestData = VisionDataset
 TrainTestData = Tuple[TrainData, TestData]
 TrainValTestData = Tuple[TrainData, ValData, TestData]
 
-MNISTData = Union[TrainTestData, TrainValTestData]
+CIFAR10Data = Union[TrainTestData, TrainValTestData]
 
 
 def load(
@@ -21,9 +21,9 @@ def load(
     download: bool = False,
     val_size: int = None,
     generator: Generator = None,
-) -> MNISTData:
+) -> CIFAR10Data:
     """
-    Load the MNIST dataset.
+    Load the CIFAR10 dataset.
 
     Args:
         root: Root directory of datasets or where to download them if download=True.
@@ -38,14 +38,16 @@ def load(
         a third dataset is returned.
     """
     transform_fns = [
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,)),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ]
     transform = transforms.Compose(transform_fns)
 
     kwargs = {"root": root, "download": download, "transform": transform}
-    train = torch_datasets.MNIST(train=True, **kwargs)
-    test = torch_datasets.MNIST(train=False, **kwargs)
+    train = torch_datasets.CIFAR10(train=True, **kwargs)
+    test = torch_datasets.CIFAR10(train=False, **kwargs)
 
     if val_size is not None and val_size > 0:
         assert val_size < len(train)
