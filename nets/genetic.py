@@ -1,5 +1,6 @@
 import math
 import logging
+import sys
 from typing import Callable, Dict, Iterator
 
 import torch
@@ -153,7 +154,8 @@ def nets_fitness(
             penalty = ((density - target) / (1 - target)) ** 2
 
             # Calculate the fitness
-            fitnesses[i] = train_loss + penalty
+            fitnesses[i] = val_loss + penalty
+            logger.info("Fitness: %.4f", fitnesses[i])
             train_losses[i] = train_loss
             val_losses[i] = val_loss
             val_accs[i] = val_acc

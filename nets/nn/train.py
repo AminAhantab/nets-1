@@ -61,12 +61,12 @@ def train_model(
                 y = y.to(device)
 
             # Forward and backward pass
+            opt.zero_grad()
             logits = model(X)
             loss = model.loss(logits, y)
             print(loss)
             loss.backward()
             opt.step()
-            opt.zero_grad()
 
             # Run callbacks
             _iteration_callbacks(model, callbacks, iteration, epoch, loss.item())
