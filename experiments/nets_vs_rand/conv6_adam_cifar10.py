@@ -1,4 +1,5 @@
 import logging
+import argparse
 import os
 
 from nets_cli.runners import methods
@@ -6,21 +7,20 @@ from nets_cli.config import configure_seed, configure_torch
 
 logger = logging.getLogger("nets_experiments")
 
-OUTPUT_PATH = "results/conv_2_adam"
 NETS_SEARCH_FILE = "nets_search.csv"
 NETS_TRAIN_FILE = "nets_train.csv"
-RAND_TRAIN_FILE = "rand_train_.csv"
+RAND_TRAIN_FILE = "rand_train.csv"
 
-ARCHITECTURE = "conv-2"
+ARCHITECTURE = "conv-6"
 DATASET = "cifar10"
 VALIDATION_SIZE = 5_000
 OPTIMISER = "adam"
-LEARNING_RATE = 2e-4
+LEARNING_RATE = 3e-4
 BATCH_SIZE = 64
 
 POP_SIZE = 5
 INITIAL_DENSITY = 1.0
-TARGET_DENSITY = 0.3
+TARGET_DENSITY = 0.1
 ELITISM = 2
 P_CROSSOVER = 0.5
 MR_NOISE = 0.1
@@ -30,22 +30,24 @@ MR_NOISE_SCALE = 0.1
 MAX_GENERATIONS = 15
 MIN_FITNESS = 0.0
 
-MAX_ITERATIONS = 5_000
+MAX_ITERATIONS = 50_000
 MAX_EPOCHS = None
-LOG_EVERY = 100
-LOG_VAL_EVERY = 100
-LOG_TEST_EVERY = 100
+LOG_EVERY = 500
+LOG_VAL_EVERY = 500
+LOG_TEST_EVERY = 500
 
 
-def run(trial: int, target: float):
+def run(trial: int, our_dir: str):
     logging.basicConfig(level=logging.DEBUG)
     device = configure_torch()
     configure_seed(235234 + trial)
 
-    output_path = os.path.join(OUTPUT_PATH, f"t{target}")
-    search_results_path = os.path.join(output_path, NETS_SEARCH_FILE)
-    nets_train_results_path = os.path.join(output_path, NETS_TRAIN_FILE)
-    rand_train_results_path = os.path.join(output_path, RAND_TRAIN_FILE)
+    # get filename without extension
+    filename = os.path.basename(__file__)
+    output_path = os.path.join(our_dir, filename)
+    search_results_path = os.path.join(output_path, f"{trial}_{NETS_SEARCH_FILE}")
+    nets_train_results_path = os.path.join(output_path, f"{trial}_{NETS_TRAIN_FILE}")
+    rand_train_results_path = os.path.join(output_path, f"{trial}_{RAND_TRAIN_FILE}")
 
     os.makedirs(output_path, exist_ok=True)
 
@@ -59,7 +61,7 @@ def run(trial: int, target: float):
         batch_size=BATCH_SIZE,
         pop_size=POP_SIZE,
         initial_density=INITIAL_DENSITY,
-        target_density=target,
+        target_density=TARGET_DENSITY,
         elitism=ELITISM,
         p_crossover=P_CROSSOVER,
         mr_noise=MR_NOISE,
@@ -93,8 +95,6 @@ def run(trial: int, target: float):
     # Save results
     train_results.to_csv(nets_train_results_path)
 
-    last_test_acc = train_results["test_acc"].iloc[-1]
-
     rand_model = methods.init(
         architecture=ARCHITECTURE,
         dataset=DATASET,
@@ -118,11 +118,10 @@ def run(trial: int, target: float):
 
     rand_train_results.to_csv(rand_train_results_path)
 
-    print(f"NeTS Best Density: {model.density()}")
-    print(f"NeTS Best Test Accuracy: {last_test_acc}")
-    print(f"Random model Test Accuracy: {rand_train_results['test_acc'].iloc[-1]}")
-
 
 if __name__ == "__main__":
-    for i, target_density in enumerate([0.05, 0.1, 0.2, 0.3]):
-        run(i, target_density)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--trial", type=int, default=0)
+    parser.add_argument("--out_dir", type=str, default="results")
+    args = parser.parse_args()
+    run(args.trial, args.out_dir)

@@ -7,7 +7,7 @@ import torch
 from torch import nn, Tensor
 from torch.utils.data import DataLoader
 
-from .nn import MaskedNetwork, MaskedLinear, train_model, evaluate_model
+from .nn import MaskedNetwork, MaskedLayer, train_model, evaluate_model
 from .utils import uniform_mask
 
 
@@ -60,7 +60,7 @@ def load_weights(
     """
     logger.debug("Loading weights from individual into model")
     for layer in model.layers:
-        assert isinstance(layer, MaskedLinear)
+        assert isinstance(layer, MaskedLayer)
         num_weights = layer.num_parameters()
 
         weight_vals = individual[0, :num_weights].reshape(layer.weight.shape).clone()

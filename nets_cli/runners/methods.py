@@ -203,16 +203,16 @@ def search(
     device: torch.device,
 ):
     # Initialise data
-    train_data, val_data, test_data = hydrate_dataset(dataset, val_size=val_size)
+    train_data, val_data, _ = hydrate_dataset(dataset, val_size=val_size)
 
     # Create data loaders
-    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
+    # test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
 
     # Create nets callbacks
     columns = ["generation", "chromosome", "test_loss", "test_acc"]
     test_df = pd.DataFrame(columns=columns)
-    test_cb = cb.nets_log_test_loss(test_df, test_loader, every=1, device=device)
-    callbacks = [test_cb]
+    # test_cb = cb.nets_log_test_loss(test_df, test_loader, every=1, device=device)
+    callbacks = []
 
     # Initialise the model
     model = hydrate_new_model(arch, dataset, bias=False)

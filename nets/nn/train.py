@@ -64,7 +64,6 @@ def train_model(
             opt.zero_grad()
             logits = model(X)
             loss = model.loss(logits, y)
-            print(loss)
             loss.backward()
             opt.step()
 
