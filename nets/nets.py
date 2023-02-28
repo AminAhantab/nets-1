@@ -114,7 +114,7 @@ def neuroevolution_ts(
 
         # Calculate fitness and validation stats
         fitness_result = fitness_fn(population)
-        fitness = fitness_result["fitness"]
+        fitness = fitness_result["val_loss"]
         best_idx = torch.argmin(fitness)
 
         # Log best individual and other results
