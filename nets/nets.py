@@ -114,7 +114,7 @@ def neuroevolution_ts(
 
         # Calculate fitness and validation stats
         fitness_result = fitness_fn(population)
-        fitness = fitness_result["val_loss"]
+        fitness = fitness_result["fitness"]
         best_idx = torch.argmin(fitness)
 
         # Log best individual and other results
@@ -137,6 +137,8 @@ def neuroevolution_ts(
             logger.debug("New best solution found: fitness=%.4f", fitness[best_idx])
             solution_chromosome = population[best_idx, :, :].squeeze().clone()
             solution = (solution_chromosome, fitness[best_idx].item())
+
+        mr_weight_zero = min(mr_weight_zero * ((1 + 0.03) ** gen), 0.1)
 
         # Evolve population to next generation
         population = evolve(

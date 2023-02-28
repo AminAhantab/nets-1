@@ -35,8 +35,19 @@ def init_population(num_params: int, pop_size: int, density: float = 1.0) -> Ten
     """
     assert pop_size > 0
     logger.info("Initialising population of size %d...", pop_size)
-    population = torch.zeros((pop_size, 2, num_params))
-    nn.init.kaiming_uniform_(population[:, 0, :], a=math.sqrt(5))
+    population = torch.empty((pop_size, 2, num_params), dtype=None)
+    # HACK: This is just for LeNet to test if the initialisation is the issue...
+    for i in range(pop_size):
+        fc1 = torch.empty((300, 28 * 28))
+        fc2 = torch.empty((100, 300))
+        fc3 = torch.empty((10, 100))
+        nn.init.kaiming_uniform_(fc1, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(fc2, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(fc3, a=math.sqrt(5))
+        population[i, 0, : 300 * 28 * 28] = fc1.reshape(-1)
+        population[i, 0, 300 * 28 * 28 : 300 * 28 * 28 + 300 * 100] = fc2.reshape(-1)
+        population[i, 0, 300 * 28 * 28 + 300 * 100 :] = fc3.reshape(-1)
+
     population[:, 1, :] = uniform_mask((num_params,), density)
 
     return population
@@ -150,11 +161,14 @@ def nets_fitness(
 
             # Evaluate the model
             val_loss, val_acc = evaluate_model(model, val_loader, device)
+            logger.info('validation_loss %.4f', val_loss )
+            logger.info('acc %.4f', val_acc )
             density = model.density()
+            logger.info('density %.4f', density )
             penalty = ((density - target) / (1 - target)) ** 2
 
             # Calculate the fitness
-            fitnesses[i] = val_loss + penalty
+            fitnesses[i] = val_loss # + penalty
             logger.info("Fitness: %.4f", fitnesses[i])
             train_losses[i] = train_loss
             val_losses[i] = val_loss
