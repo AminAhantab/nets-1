@@ -107,6 +107,7 @@ def run(output_path: str, trial: int):
         log_every=100,
         log_val_every=100,
         log_test_every=100,
+        write_every=None,
         device=device,
     )
 

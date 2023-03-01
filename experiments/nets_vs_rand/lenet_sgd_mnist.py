@@ -37,6 +37,8 @@ LOG_EVERY = 500
 LOG_VAL_EVERY = 500
 LOG_TEST_EVERY = 500
 
+WRITE_EVERY = 2_500
+
 
 def run(trial: int, our_dir: str):
     logging.basicConfig(level=logging.DEBUG)
@@ -78,7 +80,7 @@ def run(trial: int, our_dir: str):
     search_results.to_csv(search_results_path)
 
     # Train the best initialisation
-    model, train_results = methods.train(
+    model, last_train_results = methods.train(
         model=initialisation,
         dataset=DATASET,
         val_size=VALIDATION_SIZE,
@@ -90,11 +92,16 @@ def run(trial: int, our_dir: str):
         log_every=LOG_EVERY,
         log_val_every=LOG_VAL_EVERY,
         log_test_every=LOG_TEST_EVERY,
+        write_every=WRITE_EVERY,
+        write_path=nets_train_results_path,
         device=device,
     )
 
-    # Save results
-    train_results.to_csv(nets_train_results_path)
+    # Save last results (if exists)
+    if len(last_train_results) > 0:
+        last_train_results.to_csv(
+            nets_train_results_path, index=False, header=False, mode="a"
+        )
 
     rand_model = methods.init(
         architecture=ARCHITECTURE,
@@ -102,7 +109,7 @@ def run(trial: int, our_dir: str):
         density=model.density(),
         bias=False,
     )
-    rand_model, rand_train_results = methods.train(
+    rand_model, last_rand_train_results = methods.train(
         model=rand_model,
         dataset=DATASET,
         val_size=VALIDATION_SIZE,
@@ -114,10 +121,15 @@ def run(trial: int, our_dir: str):
         log_every=LOG_EVERY,
         log_val_every=LOG_VAL_EVERY,
         log_test_every=LOG_TEST_EVERY,
+        write_every=WRITE_EVERY,
+        write_path=rand_train_results_path,
         device=device,
     )
 
-    rand_train_results.to_csv(rand_train_results_path)
+    if len(last_rand_train_results) > 0:
+        last_rand_train_results.to_csv(
+            rand_train_results_path, index=False, header=False, mode="a"
+        )
 
 
 if __name__ == "__main__":

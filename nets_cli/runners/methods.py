@@ -64,6 +64,8 @@ def train(
     log_every: int,
     log_val_every: int,
     log_test_every: int,
+    write_every: int,
+    write_path: str,
     device: torch.device,
 ) -> Tuple[MaskedNetwork, pd.DataFrame]:
     model.to(device)
@@ -94,6 +96,8 @@ def train(
         log_every=log_every,
         log_val_every=log_val_every,
         log_test_every=log_test_every,
+        write_every=write_every,
+        write_path=write_path,
         device=device,
     )
 
@@ -266,16 +270,25 @@ def _init_train_callbacks(
     log_every: int,
     log_val_every: int,
     log_test_every: int,
+    write_every: int,
+    write_path: str,
     device: torch.device,
 ) -> Dict[str, List[Callable]]:
 
     # Add initial stats to dataframe
     _add_initial_stats(df, model, train_loader, val_loader, test_loader, device=device)
 
+    if write_every is not None and write_every > 0:
+        # Write header and initial stats to file then clear dataframe
+        df.to_csv(write_path, index=False)
+        df.drop(df.index, inplace=True)
+
     iteration_callbacks = [
         cb.log_train_loss(df, every=log_every),
         cb.log_val_loss(df, val_loader, every=log_val_every, device=device),
         cb.log_test_loss(df, test_loader, every=log_test_every, device=device),
+        cb.write_csv(df, write_path, every=write_every),
+        cb.clear_df(df, every=write_every),
     ]
 
     epoch_callbacks = [

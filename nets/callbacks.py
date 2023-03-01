@@ -370,3 +370,76 @@ def nets_log_test_loss(
             logger.info("Test loss: %f", loss)
 
     return _cb
+
+
+def write_csv(df: pd.DataFrame, path: str, every: int = 1) -> None:
+    """
+    Returns a callback that writes the dataframe to a CSV file.
+
+    Args:
+        df: The dataframe to write.
+        path: The path to write to.
+        every: The number of iterations between writing.
+
+    Returns:
+        The callback function.
+    """
+    assert every is None or every >= 0
+    if every == 0:
+        every = None
+
+    def _cb(model, iteration: int, epoch: int, loss: float):
+        """
+        The callback function.
+
+        Args:
+            model: The model being trained.
+            iteration: The current iteration.
+            epoch: The current epoch.
+            loss: The current training loss.
+
+        Returns:
+            None
+        """
+        if every is None or iteration % every != 0:
+            return
+
+        df.to_csv(path, index=False, header=False, mode="a")
+
+    return _cb
+
+
+def clear_df(df: pd.DataFrame, every: int = 1) -> None:
+    """
+    Returns a callback that clears the dataframe.
+
+    Args:
+        df: The dataframe to clear.
+        every: The number of iterations between clearing.
+
+    Returns:
+        The callback function.
+    """
+    assert every is None or every >= 0
+    if every == 0:
+        every = None
+
+    def _cb(model, iteration: int, epoch: int, loss: float):
+        """
+        The callback function.
+
+        Args:
+            model: The model being trained.
+            iteration: The current iteration.
+            epoch: The current epoch.
+            loss: The current training loss.
+
+        Returns:
+            None
+        """
+        if every is None or iteration % every != 0:
+            return
+
+        df.drop(df.index, inplace=True)
+
+    return _cb

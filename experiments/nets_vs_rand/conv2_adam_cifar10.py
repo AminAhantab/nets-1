@@ -87,6 +87,7 @@ def run(trial: int, our_dir: str):
         log_every=LOG_EVERY,
         log_val_every=LOG_VAL_EVERY,
         log_test_every=LOG_TEST_EVERY,
+        write_every=None,
         device=device,
     )
 
@@ -111,6 +112,7 @@ def run(trial: int, our_dir: str):
         log_every=LOG_EVERY,
         log_val_every=LOG_VAL_EVERY,
         log_test_every=LOG_TEST_EVERY,
+        write_every=None,
         device=device,
     )
 
