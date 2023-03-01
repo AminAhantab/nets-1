@@ -138,7 +138,8 @@ def neuroevolution_ts(
             solution_chromosome = population[best_idx, :, :].squeeze().clone()
             solution = (solution_chromosome, fitness[best_idx].item())
 
-        mr_weight_zero = min(mr_weight_zero * ((1 + 0.01) ** gen), 0.1)
+        mr_weight_zero = min(mr_weight_zero * ((1 + 0.01
+        ) ** gen), 0.1)
 
         # Evolve population to next generation
         population = evolve(

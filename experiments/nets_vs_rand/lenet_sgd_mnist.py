@@ -15,6 +15,7 @@ ARCHITECTURE = "lenet"
 DATASET = "mnist"
 VALIDATION_SIZE = 5_000
 OPTIMISER = "sgd"
+OPTIMISER_TUNING = "adam"
 LEARNING_RATE = 1e-3
 BATCH_SIZE = 64
 
@@ -30,7 +31,7 @@ MR_NOISE_SCALE = 0.1
 MAX_GENERATIONS = 6
 MIN_FITNESS = 0.0
 
-MAX_ITERATIONS = 50_000
+MAX_ITERATIONS = 80_000
 MAX_EPOCHS = None
 LOG_EVERY = 500
 LOG_VAL_EVERY = 500
@@ -81,7 +82,7 @@ def run(trial: int, our_dir: str):
         model=initialisation,
         dataset=DATASET,
         val_size=VALIDATION_SIZE,
-        optimiser=OPTIMISER,
+        optimiser=OPTIMISER_TUNING,
         learning_rate=LEARNING_RATE,
         batch_size=BATCH_SIZE,
         max_iterations=MAX_ITERATIONS,
@@ -105,7 +106,7 @@ def run(trial: int, our_dir: str):
         model=rand_model,
         dataset=DATASET,
         val_size=VALIDATION_SIZE,
-        optimiser=OPTIMISER,
+        optimiser=OPTIMISER_TUNING,
         learning_rate=LEARNING_RATE,
         batch_size=BATCH_SIZE,
         max_iterations=MAX_ITERATIONS,
