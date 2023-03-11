@@ -30,7 +30,7 @@ MR_NOISE_SCALE = 0.1
 MAX_GENERATIONS = 15
 MIN_FITNESS = 0.0
 
-MAX_ITERATIONS = 50_000
+MAX_ITERATIONS = 10_000
 MAX_EPOCHS = None
 LOG_EVERY = 500
 LOG_VAL_EVERY = 500
@@ -94,40 +94,6 @@ def run(trial: int, our_dir: str):
     torch.save(overp_init, mkpath(f"{trial}_{FILE_PREFIX}_{TRAINED_SUFFIX}"))
     overp_results.to_csv(mkpath(f"{trial}_{FILE_PREFIX}_{TRAIN_SUFFIX}"))
 
-    # Random sparse initialisation ================================================================
-    FILE_PREFIX = "sparse"
-
-    # Initialise a random sparse model
-    sparse_init = methods.init(
-        architecture=ARCHITECTURE,
-        dataset=DATASET,
-        density=nets_init.density(),
-        bias=False,
-    )
-
-    # Save the initialisation
-    torch.save(sparse_init, mkpath(f"{trial}_{FILE_PREFIX}_{INIT_SUFFIX}"))
-
-    # Train the random sparse model
-    sparse_init, sparse_results = methods.train(
-        model=sparse_init,
-        dataset=DATASET,
-        val_size=VALIDATION_SIZE,
-        optimiser=OPTIMISER,
-        learning_rate=LEARNING_RATE,
-        batch_size=BATCH_SIZE,
-        max_iterations=MAX_ITERATIONS,
-        max_epochs=MAX_EPOCHS,
-        log_every=LOG_EVERY,
-        log_val_every=LOG_VAL_EVERY,
-        log_test_every=LOG_TEST_EVERY,
-        device=device,
-    )
-
-    # Save results
-    sparse_results.to_csv(mkpath(f"{trial}_{FILE_PREFIX}_{TRAIN_SUFFIX}"))
-    torch.save(sparse_init, mkpath(f"{trial}_{FILE_PREFIX}_{TRAINED_SUFFIX}"))
-
     # NeTS initialisation =========================================================================
     FILE_PREFIX = "nets"
 
@@ -178,6 +144,40 @@ def run(trial: int, our_dir: str):
     # Save results
     nets_train_results.to_csv(mkpath(f"{trial}_{FILE_PREFIX}_{TRAIN_SUFFIX}"))
     torch.save(nets_init, mkpath(f"{trial}_{FILE_PREFIX}_{TRAINED_SUFFIX}"))
+
+    # Random sparse initialisation ================================================================
+    FILE_PREFIX = "sparse"
+
+    # Initialise a random sparse model
+    sparse_init = methods.init(
+        architecture=ARCHITECTURE,
+        dataset=DATASET,
+        density=sparse_init.density(),
+        bias=False,
+    )
+
+    # Save the initialisation
+    torch.save(sparse_init, mkpath(f"{trial}_{FILE_PREFIX}_{INIT_SUFFIX}"))
+
+    # Train the random sparse model
+    sparse_init, sparse_results = methods.train(
+        model=sparse_init,
+        dataset=DATASET,
+        val_size=VALIDATION_SIZE,
+        optimiser=OPTIMISER,
+        learning_rate=LEARNING_RATE,
+        batch_size=BATCH_SIZE,
+        max_iterations=MAX_ITERATIONS,
+        max_epochs=MAX_EPOCHS,
+        log_every=LOG_EVERY,
+        log_val_every=LOG_VAL_EVERY,
+        log_test_every=LOG_TEST_EVERY,
+        device=device,
+    )
+
+    # Save results
+    sparse_results.to_csv(mkpath(f"{trial}_{FILE_PREFIX}_{TRAIN_SUFFIX}"))
+    torch.save(sparse_init, mkpath(f"{trial}_{FILE_PREFIX}_{TRAINED_SUFFIX}"))
 
 
 if __name__ == "__main__":

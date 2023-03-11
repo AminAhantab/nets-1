@@ -33,12 +33,14 @@ def neuroevolution_ts(
     mr_weight_noise: float = 0.1,
     mr_weight_rand: float = 0.1,
     mr_weight_zero: float = 0,
+    mr_weight_enable: float = 0,
     mr_weight_stddev: float = 0.1,
     max_generations: int = None,
     min_fitness: float = None,
     min_val_loss: float = None,
     callbacks: List[Callback] = None,
     device: Union[str, torch.device] = "cpu",
+    max_no_change: int = 10,
 ):
     """
     Run Neuroevolution Ticket Search (NeTS) to find a winning network
@@ -77,8 +79,10 @@ def neuroevolution_ts(
     assert mr_weight_noise >= 0 and mr_weight_noise <= 1
     assert mr_weight_rand >= 0 and mr_weight_rand <= 1
     assert mr_weight_zero >= 0 and mr_weight_zero <= 1
+    assert mr_weight_enable >= 0 and mr_weight_enable <= 1
     assert mr_weight_stddev >= 0
     assert max_generations >= 0
+    assert max_no_change is None or max_no_change >= 0
 
     # Initialise population
     population = genetic.init_population(model.num_parameters(), pop_size, init_density)
@@ -107,6 +111,7 @@ def neuroevolution_ts(
     # Initialise results
     solution = None
     results = init_results()
+    no_improvement_for = 0
 
     # Run evolution loop
     for gen in range(max_generations + 1):
@@ -134,9 +139,22 @@ def neuroevolution_ts(
 
         # Update best solution
         if solution is None or fitness[best_idx] < solution[1]:
-            logger.debug("New best solution found: fitness=%.4f", fitness[best_idx])
+            logger.info("New best solution found: fitness=%.4f", fitness[best_idx])
             solution_chromosome = population[best_idx, :, :].squeeze().clone()
             solution = (solution_chromosome, fitness[best_idx].item())
+            no_improvement_for = 0
+        elif max_no_change is not None:
+            logger.debug("No improvement in fitness: %.4f", fitness[best_idx])
+            no_improvement_for += 1
+            if no_improvement_for >= max_no_change:
+                logger.info(
+                    "Terminating evolution: no improvement for %d generations",
+                    max_no_change,
+                )
+                # break
+
+        # Update mutation rate
+        # mr_weight_zero = min(mr_weight_zero * ((1 + 0.0001) ** gen), 0.1)
 
         # Evolve population to next generation
         population = evolve(
@@ -148,6 +166,7 @@ def neuroevolution_ts(
             mr_weight_noise,
             mr_weight_rand,
             mr_weight_zero,
+            mr_weight_enable,
             mr_weight_stddev,
         )
 
@@ -168,6 +187,7 @@ def evolve(
     mr_weight_noise: float,
     mr_weight_rand: float,
     mr_weight_zero: float,
+    mr_weight_enable: float,
     mr_weight_stddev: float,
 ) -> Tensor:
     """Evolve population to next generation."""
@@ -180,6 +200,7 @@ def evolve(
     genetic.noise_mutation(children, mr_weight_noise, mr_weight_stddev)
     genetic.random_weight_mutation(children, mr_weight_rand)
     genetic.disable_weight_mutation(children, mr_weight_zero)
+    genetic.enable_weight_mutation(children, mr_weight_enable)
 
     # Update population to next generation
     return genetic.next_generation(model, population, fitness, children, elitism)

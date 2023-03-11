@@ -10,10 +10,10 @@
 
 set -euxo pipefail
 
-module load anaconda3/2021.05-gcc-10.3.0
+# module load anaconda3/2021.05-gcc-10.3.0
 
-PYTHON_BIN="/scratch/users/k1502897/conda/nets/bin/python"
-OUTPUT_DIR="/scratch/users/k1502897/alife_exp"
+PYTHON_BIN="/home/alexj/.conda/envs/nets/bin/python"
+OUTPUT_DIR="/home/alexj/alife_results"
 
 mkdir -p $OUTPUT_DIR
 

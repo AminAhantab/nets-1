@@ -7,9 +7,10 @@ import torch
 from torch import nn, Tensor
 from torch.utils.data import DataLoader
 
-from .nn import MaskedNetwork, MaskedLayer, train_model, evaluate_model
-from .utils import uniform_mask
 
+from .nn.masked import MaskedNetwork, MaskedLayer
+from .nn.train import train_model, evaluate_model
+from .utils import uniform_mask
 
 logger = logging.getLogger("nets")
 
@@ -35,8 +36,19 @@ def init_population(num_params: int, pop_size: int, density: float = 1.0) -> Ten
     """
     assert pop_size > 0
     logger.info("Initialising population of size %d...", pop_size)
-    population = torch.zeros((pop_size, 2, num_params))
-    nn.init.kaiming_uniform_(population[:, 0, :], a=math.sqrt(5))
+    population = torch.empty((pop_size, 2, num_params), dtype=None)
+    # HACK: This is just for LeNet to test if the initialisation is the issue...
+    for i in range(pop_size):
+        fc1 = torch.empty((300, 28 * 28))
+        fc2 = torch.empty((100, 300))
+        fc3 = torch.empty((10, 100))
+        nn.init.kaiming_uniform_(fc1, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(fc2, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(fc3, a=math.sqrt(5))
+        population[i, 0, : 300 * 28 * 28] = fc1.reshape(-1)
+        population[i, 0, 300 * 28 * 28 : 300 * 28 * 28 + 300 * 100] = fc2.reshape(-1)
+        population[i, 0, 300 * 28 * 28 + 300 * 100 :] = fc3.reshape(-1)
+
     population[:, 1, :] = uniform_mask((num_params,), density)
 
     return population
@@ -63,11 +75,23 @@ def load_weights(
         assert isinstance(layer, MaskedLayer)
         num_weights = layer.num_parameters()
 
-        weight_vals = individual[0, :num_weights].reshape(layer.weight.shape).clone()
-        mask_vals = individual[1, :num_weights].reshape(layer.mask.shape).clone()
+        weight_vals = (
+            individual[0, :num_weights]
+            .reshape(layer.weight.shape)
+            .detach()
+            .clone()
+            .to(device)
+        )
+        mask_vals = (
+            individual[1, :num_weights]
+            .reshape(layer.mask.shape)
+            .detach()
+            .clone()
+            .to(device)
+        )
 
-        layer.weight = nn.Parameter(weight_vals, requires_grad=True)
-        layer.mask = nn.Parameter(mask_vals, requires_grad=False)
+        layer.weight.data = weight_vals
+        layer.mask.data = mask_vals
         layer.to(device)
         individual = individual[:, num_weights:]
 
@@ -138,6 +162,8 @@ def nets_fitness(
         densities = torch.zeros_like(fitnesses)
         penalties = torch.zeros_like(fitnesses)
 
+        from models.lenet import LeNetFeedForwardNetwork
+
         for i, individual in enumerate(population):
             logger.debug(f"Training chromosome {i}...")
 
@@ -145,18 +171,21 @@ def nets_fitness(
             load_weights(model, individual, device=device)
 
             # Train the model
-            opt = init_opt(model.parameters())
-            train_loss = train_model(model, train_loader, opt, device, train_callbacks)
+            # opt = init_opt(model.parameters())
+            # train_loss = train_model(model, train_loader, opt, device, train_callbacks)
 
-            # Evaluate the model
+            # Evaluate the mode
             val_loss, val_acc = evaluate_model(model, val_loader, device)
+            logger.info("Validation loss: %.4f", val_loss)
+            logger.info("Validation accuracy: %.4f", val_acc)
             density = model.density()
             penalty = ((density - target) / (1 - target)) ** 2
+            logger.info("Density: %.4f", density)
 
             # Calculate the fitness
             fitnesses[i] = val_loss + penalty
             logger.info("Fitness: %.4f", fitnesses[i])
-            train_losses[i] = train_loss
+            # train_losses[i] = train_loss
             val_losses[i] = val_loss
             val_accs[i] = val_acc
             densities[i] = density
@@ -293,6 +322,31 @@ def disable_weight_mutation(individuals: Tensor, p: float):
 
     # Zero out the masks that are being mutated
     individuals[:, MASK_INDEX, :] *= 1 - application_mask
+
+
+def enable_weight_mutation(individuals: Tensor, p: float):
+    """
+    Enable the weights of the individuals.
+
+    Args:
+        individuals: A tensor of shape (pop_size, genome_depth, genome_length)
+            containing the individuals.
+        p: The probability of mutating a weight.
+
+    Returns:
+        None
+    """
+    # Extract the shape of the population
+    num_children, _, num_weights = individuals.shape
+
+    # Create a mask of random values between 0 and 1
+    random_values = torch.rand(num_children, num_weights)
+    application_mask = (random_values < p).float()
+
+    # Change the masks that are being mutated to 1 (they may be 1 already)
+    individuals[:, MASK_INDEX, :] += application_mask * (
+        1 - individuals[:, MASK_INDEX, :]
+    )
 
 
 def next_generation(

@@ -1,90 +1,62 @@
 library(tidyverse)
 
-data_path <- "data/experiments/lenet_mnist_"
-optimisers <- c("sgd", "adam")
-targets <- c("t0.05", "t0.1", "t0.2", "t0.3")
-folders <- paste(
-    data_path,
-    do.call(function(...) paste(..., sep = "/"), expand.grid(optimisers, targets)),
-    sep = "_"
+data_path <- "data/experiments"
+architecture <- c("conv_2", "lenet", "lenet", "lenet")
+dataset <- c("cifar10", "mnist", "mnist", "mnist")
+optimisers <- c("adam", "adam", "combo", "sgd")
+
+targets <- c(0.1, 0.2, 0.3, 0.05)
+
+metadata <- tibble(
+    key = 1:4,
+    architecture = architecture,
+    dataset = dataset,
+    optimiser = optimisers
 )
 
-paste0(folders, "/nets_train.csv") |>
-    map(read_csv)
+metadata <- expand.grid(key = 1:4, target = targets) |>
+    full_join(metadata) |>
+    select(architecture, dataset, optimiser, target) |>
+    mutate(
+        path = paste0(
+            data_path,
+            "/",
+            architecture,
+            "_",
+            dataset,
+            "_",
+            optimiser,
+            "/t",
+            target
+        )
+    )
 
-adam_df <- read_csv()
+metadata |>
+    mutate(
+        nets_train = paste0(path, "/nets_train.csv"),
+        rand_train = paste0(path, "/rand_train.csv"),
+        nets_search = paste0(path, "/nets_search.csv")
+    )
 
-
-nets_adam_df <- paste0(
-    "data/experiments/lenet_mnist_adam/",
-    targets,
-    "/nets_train.csv"
-) |>
-    imap(~ read_csv(.x) %>% mutate(target = targets[.y])) |>
-    bind_rows() |>
-    mutate(optimiser = "adam", method = "nets") |>
-    rename(iteration = 1)
-
-random_adam_df <- paste0(
-    "data/experiments/lenet_mnist_adam/",
-    targets,
-    "/rand_train.csv"
-) |>
-    imap(~ read_csv(.x) %>% mutate(target = targets[.y])) |>
-    bind_rows() |>
-    mutate(optimiser = "adam", method = "random") |>
-    rename(iteration = 1)
-
-adam_df <- bind_rows(nets_adam_df, random_adam_df)
-
-nets_sgd_df <- paste0(
-    "data/experiments/lenet_mnist_sgd/",
-    targets,
-    "/nets_train.csv"
-) |>
-    imap(~ read_csv(.x) %>% mutate(target = targets[.y])) |>
-    bind_rows() |>
-    mutate(optimiser = "sgd", method = "nets") |>
-    rename(iteration = 1)
-
-random_sgd_df <- paste0(
-    "data/experiments/lenet_mnist_sgd/",
-    targets,
-    "/rand_train.csv"
-) |>
-    imap(~ read_csv(.x) %>% mutate(target = targets[.y])) |>
-    bind_rows() |>
-    mutate(optimiser = "sgd", method = "random") |>
-    rename(iteration = 1)
-
-sgd_df <- bind_rows(nets_sgd_df, random_sgd_df)
-
-nets_combo_df <- paste0(
-    "data/experiments/lenet_mnist_adam_sgd_combo/",
-    targets,
-    "/nets_train.csv"
-) |>
-    imap(~ read_csv(.x) %>% mutate(target = targets[.y])) |>
-    bind_rows() |>
-    mutate(optimiser = "combo", method = "nets") |>
-    rename(iteration = 1)
-
-random_combo_df <- paste0(
-    "data/experiments/lenet_mnist_adam_sgd_combo/",
-    targets,
-    "/rand_train.csv"
-) |>
-    imap(~ read_csv(.x) %>% mutate(target = targets[.y])) |>
-    bind_rows() |>
-    mutate(optimiser = "combo", method = "random") |>
-    rename(iteration = 1)
-
-combo_df <- bind_rows(nets_combo_df, random_combo_df)
-
-nets_df <- bind_rows(adam_df, sgd_df, combo_df) |>
+train_df <- metadata |>
+    mutate(
+        nets_train = paste0(path, "/nets_train.csv"),
+        rand_train = paste0(path, "/rand_train.csv"),
+    ) |>
+    select(-path) |>
     pivot_longer(
-        c("train_loss", "train_acc", "val_loss", "val_acc", "test_loss", "test_acc"),
-        names_to = c("dataset", "metric"),
+        c("nets_train", "rand_train"),
+        names_to = "method",
+        values_to = "path"
+    ) |>
+    mutate(
+        df = map(path, ~ read_csv(.x) %>% rename(iteration = 1))
+    ) |>
+    unnest(df) |>
+    select(-path) |>
+    pivot_longer(
+        matches("(train|test|val)_.*"),
+        names_to = c("phase", "metric"),
         values_to = "value",
         names_sep = "_"
     ) |>
@@ -93,26 +65,27 @@ nets_df <- bind_rows(adam_df, sgd_df, combo_df) |>
         values_from = value
     ) |>
     mutate(
-        dataset = factor(dataset, levels = c("train", "val", "test")),
-        optimiser = factor(optimiser, levels = c("sgd", "adam", "combo")),
-        target = factor(target, levels = targets)
+        dataset = factor(dataset, levels = c("cifar10", "mnist")),
+        phase = factor(phase, levels = c("train", "val", "test")),
+        method = factor(case_when(
+            method == "nets_train" ~ "nets",
+            method == "rand_train" ~ "random"
+        ), levels = c("nets", "random")),
+        optimiser = factor(optimiser, levels = c("adam", "sgd", "combo")),
+        architecture = factor(architecture, levels = c("conv_2", "lenet")),
+        dataset = factor(dataset, levels = c("cifar10", "mnist"))
     )
 
-nets_df |>
-    filter(dataset == "val") |>
-    filter(optimiser != "sgd") |>
-    ggplot(aes(x = iteration, y = acc, colour = method)) +
+
+train_df |>
+    filter(phase == "test") |>
+    filter(architecture != "lenet" | optimiser == "sgd") |>
+    filter(architecture != "conv_2" | optimiser == "adam") |>
+    ggplot(aes(x = iteration, y = acc, color = method)) +
     geom_line() +
-    facet_grid(optimiser ~ target, scales = "free") +
+    facet_grid(architecture ~ target) +
     theme_bw() +
     theme(
         legend.position = "bottom",
         legend.title = element_blank()
-    ) +
-    labs(
-        x = "Iteration",
-        y = "Loss",
-        colour = "Dataset",
-        title = "Loss vs Iteration"
-    ) +
-    ylim(c(0.9, 1))
+    )

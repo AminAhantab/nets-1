@@ -63,7 +63,7 @@ def train_model(
             # Forward and backward pass
             opt.zero_grad()
             logits = model(X)
-            loss = model.loss(logits, y)
+            loss = model.loss(logits, y)    
             loss.backward()
             opt.step()
 
