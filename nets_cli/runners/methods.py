@@ -202,6 +202,7 @@ def search(
     max_generations: int,
     max_no_change: int,
     min_fitness: float,
+    fitness_fn: callable,
     device: torch.device,
 ):
     # Initialise data
@@ -245,6 +246,7 @@ def search(
         max_no_change=max_no_change,
         min_fitness=min_fitness,
         callbacks=callbacks,
+        fitness_fn=fitness_fn,
         device=device,
     )
 

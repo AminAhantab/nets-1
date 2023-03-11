@@ -39,6 +39,7 @@ def neuroevolution_ts(
     min_fitness: float = None,
     min_val_loss: float = None,
     callbacks: List[Callback] = None,
+    fitness_fn: Callable[[MaskedNetwork, Dataset, DataLoader], float] = None,
     device: Union[str, torch.device] = "cpu",
     max_no_change: int = 10,
 ):
@@ -98,7 +99,7 @@ def neuroevolution_ts(
     }
 
     # Initialise fitness function
-    fitness_fn = genetic.nets_fitness(
+    fitness_fn = fitness_fn(
         model,
         train_loader,
         val_loader,
