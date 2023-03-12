@@ -86,7 +86,10 @@ def neuroevolution_ts(
     assert max_no_change is None or max_no_change >= 0
 
     # Initialise population
-    population = genetic.init_population(model.num_parameters(), pop_size, init_density)
+    # TODO: More refined approach using architecture
+    population = genetic.init_population(
+        model.__class__.__name__, model.num_parameters(), pop_size, init_density
+    )
 
     # Initialise data loaders
     train_loader = DataLoader(data, batch_size=batch_size, shuffle=shuffle)
