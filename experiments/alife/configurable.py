@@ -166,7 +166,7 @@ def run(args: argparse.Namespace):
     sparse_init = methods.init(
         architecture=arch,
         dataset=dataset,
-        density=sparse_init.density(),
+        density=nets_init.density(),
         bias=False,
     )
 

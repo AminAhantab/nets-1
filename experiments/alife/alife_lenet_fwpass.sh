@@ -1,6 +1,6 @@
 #! /bin/bash -l
 
-#SBATCH --job-name=alife_exp
+#SBATCH --job-name=allefw
 #SBATCH --chdir=/users/k1502897/workspace/nets/
 #SBATCH --partition=cpu
 #SBATCH --ntasks=10
@@ -13,7 +13,7 @@ set -euxo pipefail
 module load anaconda3/2021.05-gcc-10.3.0
 
 PYTHON_BIN="/scratch/users/k1502897/conda/nets/bin/python"
-OUTPUT_DIR="/scratch/users/k1502897/lenet_alife"
+OUTPUT_DIR="/scratch/users/k1502897/alife/lenet/fwpass"
 
 mkdir -p $OUTPUT_DIR
 
@@ -27,7 +27,7 @@ for i in {1..5}; do
         --dataset mnist \
         --optimiser sgd \
         --lr 1e-3 \
-        --max_iter 10000 \
+        --max_iter 50000 \
         --fitness 1epoch \
         --cpu_only &
 done
