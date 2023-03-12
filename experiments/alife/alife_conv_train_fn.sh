@@ -14,7 +14,7 @@ set -euxo pipefail
 module load anaconda3/2021.05-gcc-10.3.0
 
 PYTHON_BIN="/scratch/users/k1502897/conda/nets/bin/python"
-OUTPUT_DIR="/scratch/users/k1502897/alife/lenet/train_fn"
+OUTPUT_DIR="/scratch/users/k1502897/alife/cifar10/train_fn"
 
 mkdir -p $OUTPUT_DIR
 
@@ -31,7 +31,7 @@ $PYTHON_BIN -m experiments.alife.configurable \
     --dataset cifar10 \
     --optimiser adam \
     --lr 3e-4 \
-    --max_iter 10000 \
+    --max_iter 50000 \
     --fitness 1epoch
 
 echo "Job $SLURM_ARRAY_JOB_ID $SLURM_ARRAY_TASK_ID finished successfully"
