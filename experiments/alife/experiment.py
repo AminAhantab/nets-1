@@ -54,6 +54,8 @@ def run(args: argparse.Namespace):
         fitness_path = "sgd"
     elif fitness == "fwpass":
         fitness_path = "fwp"
+    elif fitness == "fwpass_train":
+        fitness_path = "fwp_sgd"
     else:
         raise ValueError(f"Unknown fitness function {fitness}")
 
@@ -113,6 +115,8 @@ def run(args: argparse.Namespace):
         fitness_fn = genetic.nets_fitness
     elif fitness == "1epoch":
         fitness_fn = genetic.nets_fitness_1epoch
+    elif fitness == "fwpass_train":
+        fitness_fn = genetic.nets_fitness_train
     else:
         raise ValueError(f"Unknown fitness function: {fitness}")
 

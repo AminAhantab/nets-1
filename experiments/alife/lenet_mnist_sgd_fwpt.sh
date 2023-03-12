@@ -1,6 +1,6 @@
 #! /bin/bash -l
 
-#SBATCH --job-name=c6caflp
+#SBATCH --job-name=lmsf
 #SBATCH --chdir=/users/k1502897/workspace/nets/
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu
@@ -18,15 +18,13 @@ PYTHON_BIN="/scratch/users/k1502897/conda/nets/bin/python"
 # Define parameters for each array job task
 SEED=$((42 + $SLURM_ARRAY_TASK_ID))
 TRIAL=$SLURM_ARRAY_TASK_ID  # Used for filenames
-OUTPUT_DIR="/scratch/users/k1502897/alife/large_pop"
-ARCH=conv-6  # Architecture
-DATASET=cifar10  # Target dataset
-OPTIMISER=adam  # Optimiser
-LR=3e-4  # Learning rate
+OUTPUT_DIR="/scratch/users/k1502897/alife"
+ARCH=lenet  # Architecture
+DATASET=mnist  # Target dataset
+OPTIMISER=sgd  # Optimiser
+LR=1e-3  # Learning rate
 MAX_ITER=50000  # Maximum (final) training iterations
-FITNESS=fwpass  # NeTS fitness function
-POP_SIZE=100    # Population size
-MAX_GEN=15
+FITNESS=fwpass_train  # NeTS fitness function
 
 mkdir -p $OUTPUT_DIR
 
@@ -40,8 +38,6 @@ $PYTHON_BIN -m experiments.alife.experiment \
     --optimiser $OPTIMISER \
     --lr $LR \
     --max_iter $MAX_ITER \
-    --fitness $FITNESS \
-    --pop_size $POP_SIZE \
-    --max_gen $MAX_GEN
+    --fitness $FITNESS
 
 echo "Job $SLURM_ARRAY_JOB_ID $SLURM_ARRAY_TASK_ID finished successfully"

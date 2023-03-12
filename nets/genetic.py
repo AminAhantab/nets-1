@@ -336,6 +336,81 @@ def nets_fitness(
     return fitness
 
 
+def nets_fitness_train(
+    model: MaskedNetwork,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    init_opt: Callable[[Iterator[nn.Parameter]], torch.optim.Optimizer],
+    target: float = 0.2,
+    train_callbacks: Dict[str, list] = None,
+    device: torch.device = None,
+) -> FitnessFn:
+    """
+    Create a fitness function for the Nets algorithm.
+
+    This is a higher-order function that returns a function that can be used to
+    calculate the fitness of a population.
+    It will use the given model, data and target density to calculate the
+    losses, accuracies, and fitness.
+
+    Args:
+        model: The model to train.
+        train_data: The data to train on.
+        val_data: The data to validate on.
+        target: The target density of the model.
+
+    Returns:
+        A function that can be used to calculate the fitness of a population.
+    """
+
+    def fitness(population: Tensor) -> Dict[str, Tensor]:
+        fitnesses = torch.zeros_like(population[:, 0, 0])
+        train_losses = torch.zeros_like(fitnesses)
+        val_losses = torch.zeros_like(fitnesses)
+        val_accs = torch.zeros_like(fitnesses)
+        densities = torch.zeros_like(fitnesses)
+        penalties = torch.zeros_like(fitnesses)
+
+        for i, individual in enumerate(population):
+            logger.debug(f"Training chromosome {i}...")
+
+            # Load the weights into the model
+            load_weights(model, individual, device=device)
+
+            # Evaluate the mode
+            train_loss, train_acc = evaluate_model(model, train_loader, device)
+            val_loss, val_acc = evaluate_model(model, val_loader, device)
+            logger.info("Train loss: %.4f", train_loss)
+            logger.info("Train accuracy: %.4f", train_acc)
+            logger.info("Validation loss: %.4f", val_loss)
+            logger.info("Validation accuracy: %.4f", val_acc)
+            density = model.density()
+            penalty = ((density - target) / (1 - target)) ** 2
+            logger.info("Density: %.4f", density)
+
+            # Calculate the fitness
+            fitnesses[i] = train_loss + val_loss + penalty
+            logger.info("Fitness: %.4f", fitnesses[i])
+            train_losses[i] = train_loss
+            val_losses[i] = val_loss
+            val_accs[i] = val_acc
+            densities[i] = density
+            penalties[i] = penalty
+
+        results = {
+            "fitness": fitnesses,
+            "train_loss": train_losses,
+            "val_loss": val_losses,
+            "val_acc": val_accs,
+            "density": densities,
+            "penalty": penalties,
+        }
+
+        return results
+
+    return fitness
+
+
 def nets_fitness_1epoch(
     model: MaskedNetwork,
     train_loader: DataLoader,
