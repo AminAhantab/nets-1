@@ -16,12 +16,7 @@ INITIAL_DENSITY = 1.0
 TARGET_DENSITY = 0.1
 ELITISM = 2
 P_CROSSOVER = 0.5
-MR_NOISE = 0.1
-MR_RANDOM = 0.1
-MR_DISABLE = 0.2
-MR_ENABLE = 0
 MR_NOISE_SCALE = 0.1
-MAX_GENERATIONS = 15
 MIN_FITNESS = 0.0
 
 MAX_ITERATIONS = 10_000
@@ -44,6 +39,12 @@ def run(args: argparse.Namespace):
     optimiser = args.optimiser
     lr = args.lr
     max_iter = args.max_iter
+    max_gen = args.max_gen
+    mr_noise = args.mr_noise
+    mr_disable = args.mr_disable
+    mr_enable = args.mr_enable
+    mr_random = args.mr_random
+    pop_size = args.pop_size
 
     configure_seed(seed)
 
@@ -123,18 +124,18 @@ def run(args: argparse.Namespace):
         optimiser=optimiser,
         learning_rate=lr,
         batch_size=BATCH_SIZE,
-        pop_size=POP_SIZE,
+        pop_size=pop_size,
         initial_density=INITIAL_DENSITY,
         target_density=TARGET_DENSITY,
         elitism=ELITISM,
         p_crossover=P_CROSSOVER,
-        mr_noise=MR_NOISE,
-        mr_random=MR_RANDOM,
-        mr_disable=MR_DISABLE,
-        mr_enable=MR_ENABLE,
+        mr_noise=mr_noise,
+        mr_random=mr_random,
+        mr_disable=mr_disable,
+        mr_enable=mr_enable,
         max_no_change=None,
         mr_noise_scale=MR_NOISE_SCALE,
-        max_generations=MAX_GENERATIONS,
+        max_generations=max_gen,
         min_fitness=MIN_FITNESS,
         fitness_fn=fitness_fn,
         device=device,
@@ -211,5 +212,11 @@ if __name__ == "__main__":
     parser.add_argument("--out_dir", type=str, default="results")
     parser.add_argument("--max_iter", type=int, default=10_000)
     parser.add_argument("--cpu_only", action="store_true")
+    parser.add_argument("--pop_size", type=int, default=5)
+    parser.add_argument("--max_gen", type=int, default=15)
+    parser.add_argument("--mr_random", type=float, default=0.1)
+    parser.add_argument("--mr_noise", type=float, default=0.1)
+    parser.add_argument("--mr_disable", type=float, default=0.2)
+    parser.add_argument("--mr_enable", type=float, default=0.0)
     args = parser.parse_args()
     run(args)
