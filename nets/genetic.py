@@ -37,17 +37,141 @@ def init_population(num_params: int, pop_size: int, density: float = 1.0) -> Ten
     assert pop_size > 0
     logger.info("Initialising population of size %d...", pop_size)
     population = torch.empty((pop_size, 2, num_params), dtype=None)
-    # HACK: This is just for LeNet to test if the initialisation is the issue...
+
+    # # HACK: This is just for LeNet to test if the initialisation is the issue...
+    # for i in range(pop_size):
+    #     fc1 = torch.empty((300, 28 * 28))
+    #     fc2 = torch.empty((100, 300))
+    #     fc3 = torch.empty((10, 100))
+    #     nn.init.kaiming_uniform_(fc1, a=math.sqrt(5))
+    #     nn.init.kaiming_uniform_(fc2, a=math.sqrt(5))
+    #     nn.init.kaiming_uniform_(fc3, a=math.sqrt(5))
+    #     population[i, 0, : 300 * 28 * 28] = fc1.reshape(-1)
+    #     population[i, 0, 300 * 28 * 28 : 300 * 28 * 28 + 300 * 100] = fc2.reshape(-1)
+    #     population[i, 0, 300 * 28 * 28 + 300 * 100 :] = fc3.reshape(-1)
+
+    # HACK: This is just for Conv-6 to test if the initialisation is the issue...
     for i in range(pop_size):
-        fc1 = torch.empty((300, 28 * 28))
-        fc2 = torch.empty((100, 300))
-        fc3 = torch.empty((10, 100))
-        nn.init.kaiming_uniform_(fc1, a=math.sqrt(5))
-        nn.init.kaiming_uniform_(fc2, a=math.sqrt(5))
-        nn.init.kaiming_uniform_(fc3, a=math.sqrt(5))
-        population[i, 0, : 300 * 28 * 28] = fc1.reshape(-1)
-        population[i, 0, 300 * 28 * 28 : 300 * 28 * 28 + 300 * 100] = fc2.reshape(-1)
-        population[i, 0, 300 * 28 * 28 + 300 * 100 :] = fc3.reshape(-1)
+        conv1 = torch.empty(64, 3, 3, 3)
+        conv2 = torch.empty(64, 64, 3, 3)
+        conv3 = torch.empty(128, 64, 3, 3)
+        conv4 = torch.empty(128, 128, 3, 3)
+        conv5 = torch.empty(128, 256, 3, 3)
+        conv6 = torch.empty(256, 256, 3, 3)
+        fc1 = torch.empty((256, 4096))
+        fc2 = torch.empty((256, 256))
+        fc3 = torch.empty((10, 256))
+        nn.init.kaiming_uniform_(conv1, mode="fan_in", a=math.sqrt(5))
+        nn.init.kaiming_uniform_(conv2, mode="fan_in", a=math.sqrt(5))
+        nn.init.kaiming_uniform_(conv3, mode="fan_in", a=math.sqrt(5))
+        nn.init.kaiming_uniform_(conv4, mode="fan_in", a=math.sqrt(5))
+        nn.init.kaiming_uniform_(conv5, mode="fan_in", a=math.sqrt(5))
+        nn.init.kaiming_uniform_(conv6, mode="fan_in", a=math.sqrt(5))
+        nn.init.kaiming_uniform_(fc1, mode="fan_in", a=math.sqrt(5))
+        nn.init.kaiming_uniform_(fc2, mode="fan_in", a=math.sqrt(5))
+        nn.init.kaiming_uniform_(fc3, mode="fan_in", a=math.sqrt(5))
+        population[i, 0, : 64 * 3 * 3 * 3] = conv1.reshape(-1)
+        population[
+            i, 0, 64 * 3 * 3 * 3 : 64 * 3 * 3 * 3 + 64 * 64 * 3 * 3
+        ] = conv2.reshape(-1)
+        population[
+            i,
+            0,
+            64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3 : 64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3
+            + 128 * 64 * 3 * 3,
+        ] = conv3.reshape(-1)
+        population[
+            i,
+            0,
+            64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3
+            + 128 * 64 * 3 * 3 : 64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3
+            + 128 * 64 * 3 * 3
+            + 128 * 128 * 3 * 3,
+        ] = conv4.reshape(-1)
+        population[
+            i,
+            0,
+            64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3
+            + 128 * 64 * 3 * 3
+            + 128 * 128 * 3 * 3 : 64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3
+            + 128 * 64 * 3 * 3
+            + 128 * 128 * 3 * 3
+            + 128 * 256 * 3 * 3,
+        ] = conv5.reshape(-1)
+        population[
+            i,
+            0,
+            64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3
+            + 128 * 64 * 3 * 3
+            + 128 * 128 * 3 * 3
+            + 128 * 256 * 3 * 3 : 64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3
+            + 128 * 64 * 3 * 3
+            + 128 * 128 * 3 * 3
+            + 128 * 256 * 3 * 3
+            + 256 * 256 * 3 * 3,
+        ] = conv6.reshape(-1)
+        population[
+            i,
+            0,
+            64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3
+            + 128 * 64 * 3 * 3
+            + 128 * 128 * 3 * 3
+            + 128 * 256 * 3 * 3
+            + 256 * 256 * 3 * 3 : 64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3
+            + 128 * 64 * 3 * 3
+            + 128 * 128 * 3 * 3
+            + 128 * 256 * 3 * 3
+            + 256 * 256 * 3 * 3
+            + 256 * 4096,
+        ] = fc1.reshape(-1)
+        population[
+            i,
+            0,
+            64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3
+            + 128 * 64 * 3 * 3
+            + 128 * 128 * 3 * 3
+            + 128 * 256 * 3 * 3
+            + 256 * 256 * 3 * 3
+            + 256 * 4096 : 64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3
+            + 128 * 64 * 3 * 3
+            + 128 * 128 * 3 * 3
+            + 128 * 256 * 3 * 3
+            + 256 * 256 * 3 * 3
+            + 256 * 4096
+            + 256 * 256,
+        ] = fc2.reshape(-1)
+        population[
+            i,
+            0,
+            64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3
+            + 128 * 64 * 3 * 3
+            + 128 * 128 * 3 * 3
+            + 128 * 256 * 3 * 3
+            + 256 * 256 * 3 * 3
+            + 256 * 4096
+            + 256 * 256 : 64 * 3 * 3 * 3
+            + 64 * 64 * 3 * 3
+            + 128 * 64 * 3 * 3
+            + 128 * 128 * 3 * 3
+            + 128 * 256 * 3 * 3
+            + 256 * 256 * 3 * 3
+            + 256 * 4096
+            + 256 * 256
+            + 10 * 256,
+        ] = fc3.reshape(-1)
 
     population[:, 1, :] = uniform_mask((num_params,), density)
 
