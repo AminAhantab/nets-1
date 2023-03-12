@@ -19,7 +19,6 @@ P_CROSSOVER = 0.5
 MR_NOISE_SCALE = 0.1
 MIN_FITNESS = 0.0
 
-MAX_ITERATIONS = 10_000
 MAX_EPOCHS = None
 LOG_EVERY = 500
 LOG_VAL_EVERY = 500
@@ -157,7 +156,7 @@ def run(args: argparse.Namespace):
         optimiser=optimiser,
         learning_rate=lr,
         batch_size=BATCH_SIZE,
-        max_iterations=MAX_ITERATIONS,
+        max_iterations=max_iter,
         max_epochs=MAX_EPOCHS,
         log_every=LOG_EVERY,
         log_val_every=LOG_VAL_EVERY,
@@ -191,7 +190,7 @@ def run(args: argparse.Namespace):
         optimiser=optimiser,
         learning_rate=lr,
         batch_size=BATCH_SIZE,
-        max_iterations=MAX_ITERATIONS,
+        max_iterations=max_iter,
         max_epochs=MAX_EPOCHS,
         log_every=LOG_EVERY,
         log_val_every=LOG_VAL_EVERY,
