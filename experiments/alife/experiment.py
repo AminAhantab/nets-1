@@ -1,21 +1,14 @@
 import logging
 import argparse
 import os
+from nets import genetic
 
 from nets_cli.runners import methods
 from nets_cli.config import configure_seed, configure_torch
 
 logger = logging.getLogger("nets_experiments")
 
-NETS_SEARCH_FILE = "nets_search.csv"
-NETS_TRAIN_FILE = "nets_train.csv"
-RAND_TRAIN_FILE = "rand_train.csv"
-
-ARCHITECTURE = "lenet"
-DATASET = "mnist"
 VALIDATION_SIZE = 5_000
-OPTIMISER = "sgd"
-LEARNING_RATE = 1e-3
 BATCH_SIZE = 64
 
 POP_SIZE = 5
@@ -26,6 +19,7 @@ P_CROSSOVER = 0.5
 MR_NOISE = 0.1
 MR_RANDOM = 0.1
 MR_DISABLE = 0.2
+MR_ENABLE = 0
 MR_NOISE_SCALE = 0.1
 MAX_GENERATIONS = 15
 MIN_FITNESS = 0.0
@@ -37,16 +31,32 @@ LOG_VAL_EVERY = 500
 LOG_TEST_EVERY = 500
 
 
-def run(trial: int, our_dir: str):
+def run(args: argparse.Namespace):
     logging.basicConfig(level=logging.DEBUG)
-    device = configure_torch()
-    configure_seed(235234 + trial)
+    device = configure_torch(args.cpu_only)
+
+    trial = args.trial
+    seed = args.seed
+    out_dir = args.out_dir
+    arch = args.arch
+    dataset = args.dataset
+    fitness = args.fitness
+    optimiser = args.optimiser
+    lr = args.lr
+    max_iter = args.max_iter
+
+    configure_seed(seed)
 
     import torch
 
-    # get filename without extension
-    filename = os.path.basename(__file__)
-    output_path = os.path.join(our_dir, filename)
+    if fitness == "1epoch":
+        fitness_path = "sgd"
+    elif fitness == "fwpass":
+        fitness_path = "fwp"
+    else:
+        raise ValueError(f"Unknown fitness function {fitness}")
+
+    output_path = os.path.join(out_dir, arch, dataset, optimiser, fitness_path)
 
     def mkpath(*args):
         return os.path.join(output_path, *args)
@@ -64,8 +74,8 @@ def run(trial: int, our_dir: str):
 
     # Initialise a random model
     overp_init = methods.init(
-        architecture=ARCHITECTURE,
-        dataset=DATASET,
+        architecture=arch,
+        dataset=dataset,
         density=INITIAL_DENSITY,
         bias=False,
     )
@@ -77,12 +87,12 @@ def run(trial: int, our_dir: str):
     # Train the random model
     overp_init, overp_results = methods.train(
         model=overp_init,
-        dataset=DATASET,
+        dataset=dataset,
         val_size=VALIDATION_SIZE,
-        optimiser=OPTIMISER,
-        learning_rate=LEARNING_RATE,
+        optimiser=optimiser,
+        learning_rate=lr,
         batch_size=BATCH_SIZE,
-        max_iterations=MAX_ITERATIONS,
+        max_iterations=max_iter,
         max_epochs=MAX_EPOCHS,
         log_every=LOG_EVERY,
         log_val_every=LOG_VAL_EVERY,
@@ -97,13 +107,21 @@ def run(trial: int, our_dir: str):
     # NeTS initialisation =========================================================================
     FILE_PREFIX = "nets"
 
+    # fitness functio
+    if fitness == "fwpass":
+        fitness_fn = genetic.nets_fitness
+    elif fitness == "1epoch":
+        fitness_fn = genetic.nets_fitness_1epoch
+    else:
+        raise ValueError(f"Unknown fitness function: {fitness}")
+
     # Search for an initialisation using NeTS
     nets_init, nets_search_results = methods.search(
-        arch=ARCHITECTURE,
-        dataset=DATASET,
+        arch=arch,
+        dataset=dataset,
         val_size=VALIDATION_SIZE,
-        optimiser=OPTIMISER,
-        learning_rate=LEARNING_RATE,
+        optimiser=optimiser,
+        learning_rate=lr,
         batch_size=BATCH_SIZE,
         pop_size=POP_SIZE,
         initial_density=INITIAL_DENSITY,
@@ -113,11 +131,12 @@ def run(trial: int, our_dir: str):
         mr_noise=MR_NOISE,
         mr_random=MR_RANDOM,
         mr_disable=MR_DISABLE,
-        mr_enable=0,
+        mr_enable=MR_ENABLE,
         max_no_change=None,
         mr_noise_scale=MR_NOISE_SCALE,
         max_generations=MAX_GENERATIONS,
         min_fitness=MIN_FITNESS,
+        fitness_fn=fitness_fn,
         device=device,
     )
 
@@ -128,10 +147,10 @@ def run(trial: int, our_dir: str):
     # Train the best initialisation
     nets_init, nets_train_results = methods.train(
         model=nets_init,
-        dataset=DATASET,
+        dataset=dataset,
         val_size=VALIDATION_SIZE,
-        optimiser=OPTIMISER,
-        learning_rate=LEARNING_RATE,
+        optimiser=optimiser,
+        learning_rate=lr,
         batch_size=BATCH_SIZE,
         max_iterations=MAX_ITERATIONS,
         max_epochs=MAX_EPOCHS,
@@ -150,8 +169,8 @@ def run(trial: int, our_dir: str):
 
     # Initialise a random sparse model
     sparse_init = methods.init(
-        architecture=ARCHITECTURE,
-        dataset=DATASET,
+        architecture=arch,
+        dataset=dataset,
         density=nets_init.density(),
         bias=False,
     )
@@ -162,10 +181,10 @@ def run(trial: int, our_dir: str):
     # Train the random sparse model
     sparse_init, sparse_results = methods.train(
         model=sparse_init,
-        dataset=DATASET,
+        dataset=dataset,
         val_size=VALIDATION_SIZE,
-        optimiser=OPTIMISER,
-        learning_rate=LEARNING_RATE,
+        optimiser=optimiser,
+        learning_rate=lr,
         batch_size=BATCH_SIZE,
         max_iterations=MAX_ITERATIONS,
         max_epochs=MAX_EPOCHS,
@@ -182,7 +201,15 @@ def run(trial: int, our_dir: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--seed", type=int, default=235234)
+    parser.add_argument("--arch", type=str, default="lenet")
+    parser.add_argument("--dataset", type=str, default="mnist")
+    parser.add_argument("--fitness", type=str, default="fwpass")
+    parser.add_argument("--optimiser", type=str, default="sgd")
+    parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--trial", type=int, default=0)
     parser.add_argument("--out_dir", type=str, default="results")
+    parser.add_argument("--max_iter", type=int, default=10_000)
+    parser.add_argument("--cpu_only", action="store_true")
     args = parser.parse_args()
-    run(args.trial, args.out_dir)
+    run(args)

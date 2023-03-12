@@ -1,6 +1,6 @@
 #! /bin/bash -l
 
-#SBATCH --job-name=alletf
+#SBATCH --job-name=lmsf
 #SBATCH --chdir=/users/k1502897/workspace/nets/
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu
@@ -14,24 +14,30 @@ set -euxo pipefail
 module load anaconda3/2021.05-gcc-10.3.0
 
 PYTHON_BIN="/scratch/users/k1502897/conda/nets/bin/python"
-OUTPUT_DIR="/scratch/users/k1502897/alife/cifar10/train_fn"
-
-mkdir -p $OUTPUT_DIR
 
 # Define parameters for each array job task
 SEED=$((42 + $SLURM_ARRAY_TASK_ID))
-TRIAL=$SLURM_ARRAY_TASK_ID
+TRIAL=$SLURM_ARRAY_TASK_ID  # Used for filenames
+OUTPUT_DIR="/scratch/users/k1502897/alife"
+ARCH=lenet  # Architecture
+DATASET=mnist  # Target dataset
+OPTIMISER=sgd  # Optimiser
+LR=1e-3  # Learning rate
+MAX_ITER=50000  # Maximum (final) training iterations
+FITNESS=fwpass  # NeTS fitness function
+
+mkdir -p $OUTPUT_DIR
 
 # Run the experiment for the current task
-$PYTHON_BIN -m experiments.alife.configurable \
+$PYTHON_BIN -m experiments.alife.experiment \
     --trial $TRIAL \
     --seed $SEED \
     --out_dir $OUTPUT_DIR \
-    --arch conv-6 \
-    --dataset cifar10 \
-    --optimiser adam \
-    --lr 3e-4 \
-    --max_iter 50000 \
-    --fitness 1epoch
+    --arch $ARCH \
+    --dataset $DATASET \
+    --optimiser $OPTIMISER \
+    --lr $LR \
+    --max_iter $MAX_ITER \
+    --fitness $FITNESS
 
 echo "Job $SLURM_ARRAY_JOB_ID $SLURM_ARRAY_TASK_ID finished successfully"
