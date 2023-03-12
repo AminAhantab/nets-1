@@ -212,8 +212,8 @@ def search(
     # test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
 
     # Create nets callbacks
-    columns = ["generation", "chromosome", "test_loss", "test_acc"]
-    test_df = pd.DataFrame(columns=columns)
+    # columns = ["generation", "chromosome", "test_loss", "test_acc"]
+    # test_df = pd.DataFrame(columns=columns)
     # test_cb = cb.nets_log_test_loss(test_df, test_loader, every=1, device=device)
     callbacks = []
 
@@ -250,8 +250,8 @@ def search(
         device=device,
     )
 
-    merged_df = pd.merge(results, test_df, on=["generation", "chromosome"])
-    return model, merged_df
+    # merged_df = pd.merge(results, test_df, on=["generation", "chromosome"])
+    return model, results
 
 
 def _reinitialise_weights(
