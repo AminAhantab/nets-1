@@ -29,6 +29,7 @@ FITNESS=fwpass  # NeTS fitness function
 mkdir -p $OUTPUT_DIR
 
 sizes=(5 10 50 100)
+index=$(expr $SLURM_ARRAY_TASK_ID - 1)
 
 # Run the experiment for the current task
 $PYTHON_BIN -m experiments.alife.experiment \
@@ -41,6 +42,6 @@ $PYTHON_BIN -m experiments.alife.experiment \
     --lr $LR \
     --max_iter $MAX_ITER \
     --fitness $FITNESS \
-    --pop_size ${sizes[$SLURM_ARRAY_TASK_ID]}
+    --pop_size ${sizes[index]}
 
 echo "Job $SLURM_ARRAY_JOB_ID $SLURM_ARRAY_TASK_ID finished successfully"

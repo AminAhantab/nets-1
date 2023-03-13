@@ -11,7 +11,6 @@ logger = logging.getLogger("nets_experiments")
 VALIDATION_SIZE = 5_000
 BATCH_SIZE = 64
 
-POP_SIZE = 5
 INITIAL_DENSITY = 1.0
 TARGET_DENSITY = 0.1
 ELITISM = 2
@@ -72,39 +71,39 @@ def run(args: argparse.Namespace):
     SEARCH_SUFFIX = "search.csv"
 
     # Overparametrised initialisation =============================================================
-    FILE_PREFIX = "overp"
+    # FILE_PREFIX = "overp"
 
-    # Initialise a random model
-    overp_init = methods.init(
-        architecture=arch,
-        dataset=dataset,
-        density=INITIAL_DENSITY,
-        bias=False,
-    )
+    # # Initialise a random model
+    # overp_init = methods.init(
+    #     architecture=arch,
+    #     dataset=dataset,
+    #     density=INITIAL_DENSITY,
+    #     bias=False,
+    # )
 
-    # Save the initialisation
-    overp_init_path = mkpath(f"{trial}_{FILE_PREFIX}_{INIT_SUFFIX}")
-    torch.save(overp_init, overp_init_path)
+    # # Save the initialisation
+    # overp_init_path = mkpath(f"{trial}_{FILE_PREFIX}_{INIT_SUFFIX}")
+    # torch.save(overp_init, overp_init_path)
 
-    # Train the random model
-    overp_init, overp_results = methods.train(
-        model=overp_init,
-        dataset=dataset,
-        val_size=VALIDATION_SIZE,
-        optimiser=optimiser,
-        learning_rate=lr,
-        batch_size=BATCH_SIZE,
-        max_iterations=max_iter,
-        max_epochs=MAX_EPOCHS,
-        log_every=LOG_EVERY,
-        log_val_every=LOG_VAL_EVERY,
-        log_test_every=LOG_TEST_EVERY,
-        device=device,
-    )
+    # # Train the random model
+    # overp_init, overp_results = methods.train(
+    #     model=overp_init,
+    #     dataset=dataset,
+    #     val_size=VALIDATION_SIZE,
+    #     optimiser=optimiser,
+    #     learning_rate=lr,
+    #     batch_size=BATCH_SIZE,
+    #     max_iterations=max_iter,
+    #     max_epochs=MAX_EPOCHS,
+    #     log_every=LOG_EVERY,
+    #     log_val_every=LOG_VAL_EVERY,
+    #     log_test_every=LOG_TEST_EVERY,
+    #     device=device,
+    # )
 
-    # Save results
-    torch.save(overp_init, mkpath(f"{trial}_{FILE_PREFIX}_{TRAINED_SUFFIX}"))
-    overp_results.to_csv(mkpath(f"{trial}_{FILE_PREFIX}_{TRAIN_SUFFIX}"))
+    # # Save results
+    # torch.save(overp_init, mkpath(f"{trial}_{FILE_PREFIX}_{TRAINED_SUFFIX}"))
+    # overp_results.to_csv(mkpath(f"{trial}_{FILE_PREFIX}_{TRAIN_SUFFIX}"))
 
     # NeTS initialisation =========================================================================
     FILE_PREFIX = "nets"
