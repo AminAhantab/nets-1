@@ -16,9 +16,9 @@ module load anaconda3/2021.05-gcc-10.3.0
 PYTHON_BIN="/scratch/users/k1502897/conda/nets/bin/python"
 
 # Define parameters for each array job task
-SEED=$((42 + $SLURM_ARRAY_TASK_ID))
+SEED=$((47 + $SLURM_ARRAY_TASK_ID))
 TRIAL=$SLURM_ARRAY_TASK_ID  # Used for filenames
-OUTPUT_DIR="/scratch/users/k1502897/alife"
+OUTPUT_DIR="/scratch/users/k1502897/alife_2"
 ARCH=lenet  # Architecture
 DATASET=mnist  # Target dataset
 OPTIMISER=adam  # Optimiser

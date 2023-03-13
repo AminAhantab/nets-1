@@ -1,13 +1,13 @@
 #! /bin/bash -l
 
-#SBATCH --job-name=lmsfms
+#SBATCH --job-name=c6caps
 #SBATCH --chdir=/users/k1502897/workspace/nets/
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu
 #SBATCH --mem=16G
 #SBATCH --signal=USR2
 #SBATCH --output=/scratch/users/%u/%A_%a.out
-#SBATCH --array=1-5
+#SBATCH --array=1-4
 
 set -euxo pipefail
 
@@ -18,25 +18,21 @@ PYTHON_BIN="/scratch/users/k1502897/conda/nets/bin/python"
 # Define parameters for each array job task
 SEED=$((47 + $SLURM_ARRAY_TASK_ID))
 TRIAL=$SLURM_ARRAY_TASK_ID  # Used for filenames
-OUTPUT_DIR="/scratch/users/k1502897/alife_2/sweep"
+OUTPUT_DIR="/scratch/users/k1502897/alife_2"
 ARCH=conv-6  # Architecture
 DATASET=cifar10  # Target dataset
 OPTIMISER=adam  # Optimiser
 LR=3e-4  # Learning rate
 MAX_ITER=50000  # Maximum (final) training iterations
-FITNESS=1epoch  # NeTS fitness function
+FITNESS=fwpass  # NeTS fitness function
 
 mkdir -p $OUTPUT_DIR
 
-# max_gen 100
-# pop_size (5, 10, 50)
-# mr_disable (0, 0.1, 0.2, 0.3)
-# mr_noise (0, 0.1, 0.2, 0.3)
-# mr_random (0, 0.1, 0.2, 0.3)
+sizes=(5 10 50 100)
 
 # Run the experiment for the current task
 $PYTHON_BIN -m experiments.alife.experiment \
-    --trial 0 \
+    --trial $TRIAL \
     --seed $SEED \
     --out_dir $OUTPUT_DIR \
     --arch $ARCH \
@@ -44,6 +40,7 @@ $PYTHON_BIN -m experiments.alife.experiment \
     --optimiser $OPTIMISER \
     --lr $LR \
     --max_iter $MAX_ITER \
-    --fitness $FITNESS
+    --fitness $FITNESS \
+    --pop_size ${sizes[$SLURM_ARRAY_TASK_ID]}
 
 echo "Job $SLURM_ARRAY_JOB_ID $SLURM_ARRAY_TASK_ID finished successfully"
