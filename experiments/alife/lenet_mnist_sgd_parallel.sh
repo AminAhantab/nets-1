@@ -31,7 +31,7 @@ mkdir -p $OUTPUT_DIR
 # Run the experiment for the current task
 $PYTHON_BIN -m experiments.alife.experiment \
     --trial $TRIAL \
-    --seed $SEED \
+    --seed $(expr $SEED + 10) \
     --out_dir $OUTPUT_DIR \
     --arch $ARCH \
     --dataset $DATASET \
@@ -47,7 +47,7 @@ $PYTHON_BIN -m experiments.alife.experiment \
 # Run the experiment for the current task
 $PYTHON_BIN -m experiments.alife.experiment \
     --trial $TRIAL \
-    --seed $SEED \
+    --seed $(expr $SEED + 20) \
     --out_dir $OUTPUT_DIR \
     --arch $ARCH \
     --dataset $DATASET \
@@ -63,7 +63,7 @@ $PYTHON_BIN -m experiments.alife.experiment \
 # Run the experiment for the current task
 $PYTHON_BIN -m experiments.alife.experiment \
     --trial $TRIAL \
-    --seed $SEED \
+    --seed $(expr $SEED + 30) \
     --out_dir $OUTPUT_DIR \
     --arch $ARCH \
     --dataset $DATASET \
