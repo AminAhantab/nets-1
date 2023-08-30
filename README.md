@@ -2,6 +2,7 @@
 
 **Finding Winning Tickets for Deep Neural Networks without Training First**
 
+[Read the Paper](https://kclpure.kcl.ac.uk/portal/files/207463669/alife_submission_7.pdf)
 <p>
     <a href="https://github.com/alexjackson1/nets">
     <div>
